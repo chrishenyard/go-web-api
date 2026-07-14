@@ -20,7 +20,7 @@ import (
 // preventing collisions with keys set by other packages.
 type claimsKey struct{}
 
-// RequireAuth is a middleware that validates a ****** on every request.
+// RequireAuth is a middleware that validates a Bearer JWT on every request.
 // Applying it to a whole handler struct (or router group) implements
 // class-level authentication – all methods of that struct are protected.
 func RequireAuth(secret string, next http.Handler) http.Handler {
@@ -84,7 +84,7 @@ func extractBearerToken(r *http.Request) (string, error) {
 	}
 	parts := strings.SplitN(header, " ", 2)
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-		return "", errors.New("Authorization header must be '******'")
+		return "", errors.New("Authorization header must be 'Bearer <token>'")
 	}
 	return parts[1], nil
 }

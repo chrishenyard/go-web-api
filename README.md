@@ -52,14 +52,14 @@ curl -s -X POST http://localhost:8080/api/auth/login \
 ```bash
 TOKEN=<jwt from login>
 curl http://localhost:8080/api/users/profile \
-  -H "Authorization: ******"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Admin-only request (class + function-level gate)
 ```bash
 TOKEN=<admin jwt>
 curl http://localhost:8080/api/admin/stats \
-  -H "Authorization: ******"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
