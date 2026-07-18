@@ -57,14 +57,14 @@ func main() {
 func getOptions() (options *gohashicorpvault.Options) {
 	options = &gohashicorpvault.Options{
 		Address:                       os.Getenv("VAULT_ADDR"),
-		AuthMethod:                    "approle",
+		AuthMethod:                    os.Getenv("VAULT_AUTH_METHOD"),
 		KubernetesJwtPath:             os.Getenv("VAULT_KUBERNETES_JWT_PATH"),
 		RoleId:                        os.Getenv("VAULT_ROLE_ID"),
 		RoleName:                      os.Getenv("VAULT_ROLE_NAME"),
 		SecretId:                      os.Getenv("VAULT_SECRET_ID"),
 		MountPoint:                    os.Getenv("VAULT_MOUNT_POINT"),
 		SecretPath:                    os.Getenv("VAULT_SECRET_PATH"),
-		AllowInvalidServerCertificate: true,
+		AllowInvalidServerCertificate: os.Getenv("VAULT_ALLOW_INVALID_SERVER_CERTIFICATE") == "true",
 	}
 	return options
 }

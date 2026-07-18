@@ -1,5 +1,5 @@
-github.com/chrishenyard/go-hashicorp-vault v1.0.1 h1:lzcni/mhPWwPe+4DiWAol7i+UtuC10lh7w4VPGzVIJo=
-github.com/chrishenyard/go-hashicorp-vault v1.0.1/go.mod h1:q+wWNYEdH3VT86WJDBHSplmO76wEtgrhgKLP0AhD3hw=
+github.com/chrishenyard/go-hashicorp-vault v1.0.2 h1:rP2toz1usmFlvXQYgYGcDh9DCkLTiae5kPBF8rwI1is=
+github.com/chrishenyard/go-hashicorp-vault v1.0.2/go.mod h1:q+wWNYEdH3VT86WJDBHSplmO76wEtgrhgKLP0AhD3hw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=

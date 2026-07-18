@@ -3,7 +3,7 @@ module github.com/chrishenyard/go-web-api
 go 1.26.5
 
 require (
-	github.com/chrishenyard/go-hashicorp-vault v1.0.1
+	github.com/chrishenyard/go-hashicorp-vault v1.0.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	golang.org/x/crypto v0.41.0
 )
