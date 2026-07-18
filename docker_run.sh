@@ -21,12 +21,14 @@ echo "Starting container on port $PORT..."
 docker run -d \
   -p 9000:9000 \
   -e VAULT_ADDR="$VAULT_ADDR" \
+  -e VAULT_AUTH_METHOD="$VAULT_AUTH_METHOD" \
   -e VAULT_KUBERNETES_JWT_PATH="$VAULT_KUBERNETES_JWT_PATH" \
   -e VAULT_MOUNT_POINT="$VAULT_MOUNT_POINT" \
   -e VAULT_ROLE_ID="$VAULT_ROLE_ID" \
   -e VAULT_ROLE_NAME="$VAULT_ROLE_NAME" \
   -e VAULT_SECRET_ID="$VAULT_SECRET_ID" \
   -e VAULT_SECRET_PATH="$VAULT_SECRET_PATH" \
+  -e VAULT_ALLOW_INVALID_SERVER_CERTIFICATE="$VAULT_ALLOW_INVALID_SERVER_CERTIFICATE" \
   --add-host=vault.localhost:host-gateway \
   --name go-web-api \
   go-web-api:latest
