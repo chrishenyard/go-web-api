@@ -14,8 +14,8 @@ type Config struct {
 // secrets manager – never be hard-coded.
 func DefaultConfig() *Config {
 	return &Config{
-		JWTSecret:     "replace-me-with-a-strong-secret-from-env",
+		JWTSecret:     "",
 		JWTExpiry:     24 * time.Hour,
-		ServerAddress: ":8080",
+		ServerAddress: ":9000",
 	}
 }

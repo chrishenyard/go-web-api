@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
+	gohashicorpvault "github.com/chrishenyard/go-hashicorp-vault"
 	"github.com/chrishenyard/go-web-api/config"
 	"github.com/chrishenyard/go-web-api/handlers"
 	"github.com/chrishenyard/go-web-api/middleware"
@@ -11,6 +13,7 @@ import (
 
 func main() {
 	cfg := config.DefaultConfig()
+	setSecretsFromVault(cfg)
 
 	store := handlers.NewMemoryUserStore()
 
@@ -48,5 +51,32 @@ func main() {
 	log.Printf("server listening on %s", cfg.ServerAddress)
 	if err := http.ListenAndServe(cfg.ServerAddress, mux); err != nil {
 		log.Fatalf("server error: %v", err)
+	}
+}
+
+func getOptions() (options *gohashicorpvault.Options) {
+	options = &gohashicorpvault.Options{
+		Address:                       os.Getenv("VAULT_ADDR"),
+		AuthMethod:                    "approle",
+		KubernetesJwtPath:             os.Getenv("VAULT_KUBERNETES_JWT_PATH"),
+		RoleId:                        os.Getenv("VAULT_ROLE_ID"),
+		RoleName:                      os.Getenv("VAULT_ROLE_NAME"),
+		SecretId:                      os.Getenv("VAULT_SECRET_ID"),
+		MountPoint:                    os.Getenv("VAULT_MOUNT_POINT"),
+		SecretPath:                    os.Getenv("VAULT_SECRET_PATH"),
+		AllowInvalidServerCertificate: true,
+	}
+	return options
+}
+
+func setSecretsFromVault(cfg *config.Config) {
+	options := getOptions()
+	resp, err := gohashicorpvault.GetSecrets(options)
+	if err != nil {
+		log.Fatalf("failed to get secrets from vault: %v", err)
+	}
+
+	if cfg.JWTSecret = resp.Data.Data["jwt_secret"].(string); cfg.JWTSecret == "" {
+		log.Fatalf("JWT secret is empty")
 	}
 }

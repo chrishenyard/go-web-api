@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+.vscode/
+go-web-api
 
 # Test binary, built with `go test -c`
 *.test
@@ -25,3 +27,7 @@ go.work.sum
 # Environment files
 .env
 .env.local
+
+# Http Rest Client
+*.http
+
