@@ -6,6 +6,7 @@
 *.dylib
 .vscode/
 go-web-api
+main
 
 # Test binary, built with `go test -c`
 *.test
