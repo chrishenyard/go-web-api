@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: go-web-api
+  name: go-web-api
+  namespace: go-web-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-web-api-service
+  template:
+    metadata:
+      labels:
+        app: go-web-api-service
+    spec:
+      containers:
+      - name: go-web-api
+        image: go-web-api
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 9000
+            protocol: TCP
+        env:
+          - name: VAULT_ADDR
+            value: http://vault.vault.svc.cluster.local:8200
+          - name: VAULT_AUTH_METHOD
+            value: "kubernetes"
+          - name: VAULT_KUBERNETES_JWT_PATH
+            value: /var/run/secrets/kubernetes.io/serviceaccount/token
+          - name: VAULT_ROLE_NAME
+            value: go-web-api-role
+          - name: VAULT_MOUNT_POINT
+            value: kv-v2
+          - name: VAULT_SECRET_PATH
+            value: go-web-api/config
+          - name: VAULT_ALLOW_INVALID_SERVER_CERTIFICATE
+            value: "false"
+          - name: jwt_secret
+            valueFrom:
+              secretKeyRef:
+                name: config
+                key: jwt_secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: go-web-api
+    app.kubernetes.io/name: go-web-api
+  name: go-web-api-service
+  namespace: go-web-api
+spec:
+  selector:
+    app.kubernetes.io/name: go-web-api
+  ports:
+    - name: "9000"
+      port: 9000
+      targetPort: 9000

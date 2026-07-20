@@ -1,0 +1,12 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: go-web-api-static-auth
+  namespace: go-web-api
+spec:
+  method: kubernetes
+  mount: kubernetes
+  vaultConnectionRef: go-web-api-vault-connection
+  kubernetes:
+    role: go-web-api-role
+    serviceAccount: default

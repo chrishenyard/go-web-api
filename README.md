@@ -69,3 +69,44 @@ curl http://localhost:8080/api/admin/stats \
 ```bash
 go test ./...
 ```
+
+### Kubernetes
+## Add Secret
+- vault kv put kv-v2/go-web-api/config \
+  jwt_secret=""
+
+## Get Secret
+- vault kv get kv-v2/go-web-api/config
+
+## Add App Policy
+- vault policy write go-web-api-policy - <<EOF
+path "kv-v2/*" {
+capabilities = ["create", "read", "update", "list", "delete"]
+}
+EOF
+
+## Add App Role
+- vault write auth/approle/role/go-web-api-role \
+  token_policies=default,go-web-api-policy \
+  token_ttl=30d
+
+## Read App Role
+- vault read auth/approle/role/go-web-api-role
+
+## Add Kubernetes Role
+- vault write auth/kubernetes/role/go-web-api-role \
+  bound_service_account_names=default \
+  bound_service_account_namespaces=go-web-api \
+  policies=default,go-web-api-policy \
+  audience="https://kubernetes.default.svc.cluster.local" \
+  ttl=30d
+
+## Read Kubernetes Policy
+- vault read auth/kubernetes/role/go-web-api-role
+
+## Get App Role ID and Secret ID
+- vault read auth/approle/role/go-web-api-role/role-id
+- vault write -f auth/approle/role/go-web-api-role/secret-id
+
+## Execute write operation to get auth token
+- vault write auth/approle/login role_id="" secret_id=""
