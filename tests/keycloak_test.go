@@ -1,0 +1,82 @@
+package tests
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"testing"
+	"time"
+
+	keycloak "github.com/stillya/testcontainers-keycloak"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+var keycloakContainer *keycloak.KeycloakContainer
+
+func Test_Example(t *testing.T) {
+	ctx := context.Background()
+
+	authServerURL, err := keycloakContainer.GetAuthServerURL(ctx)
+	if err != nil {
+		t.Errorf("GetAuthServerURL() error = %v", err)
+		return
+	}
+
+	fmt.Println(authServerURL)
+	// Output:
+	// http://localhost:32768/auth
+}
+
+// func Test_Admin_Client(t *testing.T) {
+// 	ctx := context.Background()
+
+// 	adminClient, err := keycloakContainer.GetAdminClient(ctx)
+// 	if err != nil {
+// 		t.Errorf("GetAdminClient() error = %v", err)
+// 		return
+// 	}
+
+// 	fmt.Println(adminClient)
+// }
+
+func TestMain(m *testing.M) {
+	defer func() {
+		if r := recover(); r != nil {
+			shutDown()
+			fmt.Println("Panic")
+		}
+	}()
+	setup()
+	code := m.Run()
+	shutDown()
+	os.Exit(code)
+}
+
+func setup() {
+	var err error
+	ctx := context.Background()
+	keycloakContainer, err = RunContainer(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func shutDown() {
+	ctx := context.Background()
+	err := keycloakContainer.Terminate(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
+	return keycloak.Run(ctx,
+		"keycloak/keycloak",
+		testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp").WithStartupTimeout(60*time.Second)),
+		keycloak.WithContextPath("/auth"),
+		keycloak.WithRealmImportFile("../testdata/realm-export.json"),
+		keycloak.WithAdminUsername("admin"),
+		keycloak.WithAdminPassword("admin"),
+	)
+}
