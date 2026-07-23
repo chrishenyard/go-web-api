@@ -64,32 +64,6 @@ func Test_UserCanAuthenticate(t *testing.T) {
 	)
 }
 
-// func Test_Example(t *testing.T) {
-// 	ctx := context.Background()
-
-// 	authServerURL, err := keycloakContainer.GetAuthServerURL(ctx)
-// 	if err != nil {
-// 		t.Errorf("GetAuthServerURL() error = %v", err)
-// 		return
-// 	}
-
-// 	fmt.Println(authServerURL)
-// 	// Output:
-// 	// http://localhost:32768/auth
-// }
-
-// func Test_Admin_Client(t *testing.T) {
-// 	ctx := context.Background()
-
-// 	adminClient, err := keycloakContainer.GetAdminClient(ctx)
-// 	if err != nil {
-// 		t.Errorf("GetAdminClient() error = %v", err)
-// 		return
-// 	}
-
-// 	fmt.Println(adminClient)
-// }
-
 func TestMain(m *testing.M) {
 	defer func() {
 		if r := recover(); r != nil {
