@@ -31,11 +31,6 @@ func NewUserHandler(store UserStore) *UserHandler {
 // Profile handles GET /api/users/profile.
 // Class-level: requires a valid JWT (enforced by RequireAuth wrapper).
 func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	claims := middleware.ClaimsFromContext(r.Context())
 	user := h.store.FindByID(claims.UserID)
 	if user == nil {

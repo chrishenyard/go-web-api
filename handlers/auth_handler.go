@@ -31,11 +31,6 @@ func NewAuthHandler(cfg *config.Config, store UserStore) *AuthHandler {
 // Register handles POST /api/auth/register.
 // It creates a new user account and returns a signed JWT.
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -84,11 +79,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Login handles POST /api/auth/login.
 // It validates credentials and returns a signed JWT on success.
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`

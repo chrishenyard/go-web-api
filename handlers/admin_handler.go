@@ -41,11 +41,6 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) statsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	users := h.store.All()
 	stats := map[string]interface{}{
 		"total_users": len(users),
@@ -63,11 +58,6 @@ func (h *AdminHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) promoteUserHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req struct {
 		UserID string `json:"user_id"`
 	}
