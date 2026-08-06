@@ -207,7 +207,7 @@ func shutDown() {
 
 func RunContainer(ctx context.Context) (*keycloak.KeycloakContainer, error) {
 	return keycloak.Run(ctx,
-		"keycloak/keycloak",
+		"quay.io/keycloak/keycloak:26.7.0",
 		testcontainers.WithWaitStrategy(wait.ForListeningPort("8080/tcp").WithStartupTimeout(60*time.Second)),
 		keycloak.WithContextPath(""),
 		keycloak.WithRealmImportFile("../testdata/realm_export.json"),

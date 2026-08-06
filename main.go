@@ -1,82 +1,170 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
-	gohashicorpvault "github.com/chrishenyard/go-hashicorp-vault"
-	"github.com/chrishenyard/go-web-api/config"
-	"github.com/chrishenyard/go-web-api/handlers"
-	"github.com/chrishenyard/go-web-api/middleware"
+	auth "github.com/chrishenyard/go-oidc"
 )
 
 func main() {
-	cfg := config.DefaultConfig()
-	setSecretsFromVault(cfg)
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	store := handlers.NewMemoryUserStore()
+func run() error {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer cancel()
 
-	authHandler := handlers.NewAuthHandler(cfg, store)
-	userHandler := handlers.NewUserHandler(store)
-	adminHandler := handlers.NewAdminHandler(store)
+	store := auth.NewMemoryStore()
+
+	authClient, err := auth.New(
+		ctx,
+		auth.Config{
+			IssuerURL: "http://127.0.0.1:8080/realms/Golang_Private",
+
+			ClientID:     "go-web-api-client-private",
+			ClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
+
+			RedirectURL: "http://127.0.0.1:8081/callback",
+
+			Scopes: []string{
+				"openid",
+				"profile",
+				"email",
+				"roles",
+
+				// Include this only when you specifically want
+				// Keycloak offline sessions.
+				// "offline_access",
+			},
+
+			Store: store,
+
+			CookieSecure: false,
+
+			TransactionLifetime: 5 * time.Minute,
+			SessionLifetime:     8 * time.Hour,
+
+			LoginSuccessURL: "/dashboard",
+
+			ErrorHandler: authenticationErrorHandler,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"initialize authentication: %w",
+			err,
+		)
+	}
 
 	mux := http.NewServeMux()
 
-	// ── Public routes (no JWT required) ───────────────────────────────────
-	mux.HandleFunc("POST /api/auth/register", authHandler.Register)
-	mux.HandleFunc("POST /api/auth/login", authHandler.Login)
+	mux.Handle("/login", authClient.LoginHandler())
+	mux.Handle("/callback", authClient.CallbackHandler())
+	mux.Handle("/logout", authClient.LogoutHandler())
 
-	// ── Class-level authentication: UserHandler ───────────────────────────
-	// Every route under /api/users/ is wrapped with RequireAuth.
-	// All methods of UserHandler are therefore protected by a single
-	// class-level JWT gate.  The Delete method adds a function-level role
-	// check on top of this.
-	userRoutes := http.NewServeMux()
-	userRoutes.HandleFunc("GET /api/users/profile", userHandler.Profile)
-	userRoutes.HandleFunc("DELETE /api/users/", userHandler.Delete) // handles DELETE /api/users/{id}
-	userRoutes.HandleFunc("GET /api/users", userHandler.List)
-	mux.Handle("GET /api/users", middleware.RequireAuth(cfg.JWTSecret, userRoutes))
-	mux.Handle("DELETE /api/users/", middleware.RequireAuth(cfg.JWTSecret, userRoutes))
+	mux.Handle(
+		"/dashboard",
+		authClient.RequireRole(
+			"user",
+			http.HandlerFunc(handleDashboard),
+		),
+	)
 
-	// ── Class-level authentication: AdminHandler ──────────────────────────
-	// Every route under /api/admin/ is wrapped with RequireAuth.
-	// Each AdminHandler method additionally enforces the "admin" role
-	// (function-level authorization).
-	adminRoutes := http.NewServeMux()
-	adminRoutes.HandleFunc("GET /api/admin/stats", adminHandler.Stats)
-	adminRoutes.HandleFunc("POST /api/admin/promote", adminHandler.PromoteUser)
-	mux.Handle("/api/admin/", middleware.RequireAuth(cfg.JWTSecret, adminRoutes))
+	mux.Handle(
+		"/admin",
+		authClient.RequireRole(
+			"admin",
+			http.HandlerFunc(handleAdmin),
+		),
+	)
 
-	log.Printf("server listening on %s", cfg.ServerAddress)
-	if err := http.ListenAndServe(cfg.ServerAddress, mux); err != nil {
-		log.Fatalf("server error: %v", err)
+	server := &http.Server{
+		Addr:              ":8081",
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
+
+	log.Printf("server listening on %s", server.Addr)
+
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("serve HTTP: %w", err)
+	}
+
+	return nil
 }
 
-func getOptions() (options *gohashicorpvault.Options) {
-	options = &gohashicorpvault.Options{
-		Address:                       os.Getenv("VAULT_ADDR"),
-		AuthMethod:                    os.Getenv("VAULT_AUTH_METHOD"),
-		KubernetesJwtPath:             os.Getenv("VAULT_KUBERNETES_JWT_PATH"),
-		RoleId:                        os.Getenv("VAULT_ROLE_ID"),
-		RoleName:                      os.Getenv("VAULT_ROLE_NAME"),
-		SecretId:                      os.Getenv("VAULT_SECRET_ID"),
-		MountPoint:                    os.Getenv("VAULT_MOUNT_POINT"),
-		SecretPath:                    os.Getenv("VAULT_SECRET_PATH"),
-		AllowInvalidServerCertificate: os.Getenv("VAULT_ALLOW_INVALID_SERVER_CERTIFICATE") == "true",
-	}
-	return options
+func authenticationErrorHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	err error,
+) {
+	/*
+		Log the complete internal error on the server.
+		The default handler sends only a safe general message
+		to the client.
+	*/
+	log.Printf(
+		"authentication error: method=%s path=%s error=%v",
+		r.Method,
+		r.URL.Path,
+		err,
+	)
+
+	auth.DefaultErrorHandler(w, r, err)
 }
 
-func setSecretsFromVault(cfg *config.Config) {
-	options := getOptions()
-	resp, err := gohashicorpvault.GetSecrets(options)
-	if err != nil {
-		log.Fatalf("failed to get secrets from vault: %v", err)
+func handleDashboard(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	claims, ok := auth.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(
+			w,
+			"authenticated claims are unavailable",
+			http.StatusInternalServerError,
+		)
+		return
 	}
 
-	if cfg.JWTSecret = resp.Data.Data["jwt_secret"].(string); cfg.JWTSecret == "" {
-		log.Fatalf("JWT secret is empty")
-	}
+	w.Header().Set(
+		"Content-Type",
+		"text/plain; charset=utf-8",
+	)
+
+	_, _ = fmt.Fprintf(
+		w,
+		"Welcome to the user dashboard, %s!",
+		claims.Email,
+	)
+}
+
+func handleAdmin(
+	w http.ResponseWriter,
+	_ *http.Request,
+) {
+	w.Header().Set(
+		"Content-Type",
+		"text/plain; charset=utf-8",
+	)
+
+	_, _ = w.Write(
+		[]byte(
+			"Welcome to the restricted admin control panel!",
+		),
+	)
 }
