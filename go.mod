@@ -3,7 +3,7 @@ module github.com/chrishenyard/go-web-api
 go 1.26.5
 
 require (
-	github.com/chrishenyard/go-oidc v1.0.0
+	github.com/chrishenyard/go-oidc v1.0.1
 	github.com/chromedp/chromedp v0.16.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/stillya/testcontainers-keycloak v0.3.8
