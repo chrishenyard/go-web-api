@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,9 +31,14 @@ func run() error {
 	startupCtx, cancel := context.WithTimeout(sigCtx, 10*time.Second)
 	defer cancel()
 
+	handler, err := newHttpHandler(startupCtx)
+	if err != nil {
+		return fmt.Errorf("initialize HTTP handler: %w", err)
+	}
+
 	server := &http.Server{
 		Addr:              ":8081",
-		Handler:           newHttpHandler(startupCtx),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -47,23 +53,31 @@ func run() error {
 
 	select {
 	case err := <-srvErr:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
 		return err
 	case <-sigCtx.Done():
 		stop()
 	}
 
-	// Shutdown the server gracefully.
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+
+	if err := server.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("shutdown HTTP server: %w", err)
 	}
 
 	return nil
 }
 
-func newHttpHandler(startupCtx context.Context) http.Handler {
+func newHttpHandler(startupCtx context.Context) (http.Handler, error) {
 	store := auth.NewMemoryStore()
+
+	clientSecret := os.Getenv("OIDC_CLIENT_SECRET")
+	if clientSecret == "" {
+		return nil, fmt.Errorf("OIDC_CLIENT_SECRET is required")
+	}
 
 	authClient, err := auth.New(
 		startupCtx,
@@ -71,7 +85,7 @@ func newHttpHandler(startupCtx context.Context) http.Handler {
 			IssuerURL: "http://localhost:8080/realms/Golang_Private",
 
 			ClientID:     "go-web-api-client-private",
-			ClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
+			ClientSecret: clientSecret,
 			RedirectURL:  "http://localhost:8081/callback",
 
 			RequestedScopes: []string{
@@ -107,9 +121,8 @@ func newHttpHandler(startupCtx context.Context) http.Handler {
 			LoginSuccessURL: "/dashboard",
 		},
 	)
-
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("create OIDC client: %w", err)
 	}
 
 	mux := http.NewServeMux()
@@ -119,13 +132,10 @@ func newHttpHandler(startupCtx context.Context) http.Handler {
 	mux.Handle("/dashboard", authClient.RequireRole("user", http.HandlerFunc(handleDashboard)))
 	mux.Handle("/admin", authClient.RequireRole("admin", http.HandlerFunc(handleAdmin)))
 
-	return mux
+	return mux, nil
 }
 
-func handleDashboard(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.ClaimsFromContext(r.Context())
 	if !ok {
 		http.Error(w, "authenticated claims are unavailable", http.StatusInternalServerError)
@@ -133,13 +143,16 @@ func handleDashboard(
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	_, _ = fmt.Fprintf(w, "Welcome to the user dashboard, %s!", claims.Email)
+
+	displayName := claims.Email
+	if displayName == "" {
+		displayName = "authenticated user"
+	}
+
+	_, _ = fmt.Fprintf(w, "Welcome to the user dashboard, %s!", displayName)
 }
 
-func handleAdmin(
-	w http.ResponseWriter,
-	_ *http.Request,
-) {
+func handleAdmin(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("Welcome to the restricted admin control panel!"))
 }
