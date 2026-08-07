@@ -11,6 +11,7 @@ import (
 	"time"
 
 	auth "github.com/chrishenyard/go-oidc"
+	"github.com/chrishenyard/go-web-api/config"
 )
 
 const (
@@ -19,25 +20,26 @@ const (
 )
 
 func main() {
-	if err := run(); err != nil {
+	var cfg = config.NewConfig()
+	if err := run(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() error {
+func run(cfg *config.Config) error {
 	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	startupCtx, cancel := context.WithTimeout(sigCtx, 10*time.Second)
 	defer cancel()
 
-	handler, err := newHttpHandler(startupCtx)
+	handler, err := newHttpHandler(startupCtx, cfg)
 	if err != nil {
 		return fmt.Errorf("initialize HTTP handler: %w", err)
 	}
 
 	server := &http.Server{
-		Addr:              ":8081",
+		Addr:              fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -71,7 +73,7 @@ func run() error {
 	return nil
 }
 
-func newHttpHandler(startupCtx context.Context) (http.Handler, error) {
+func newHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handler, error) {
 	store := auth.NewMemoryStore()
 
 	clientSecret := os.Getenv("OIDC_CLIENT_SECRET")
@@ -82,11 +84,11 @@ func newHttpHandler(startupCtx context.Context) (http.Handler, error) {
 	authClient, err := auth.New(
 		startupCtx,
 		auth.Config{
-			IssuerURL: "http://localhost:8080/realms/Golang_Private",
+			IssuerURL: cfg.IssuerURL,
 
-			ClientID:     "go-web-api-client-private",
+			ClientID:     cfg.ClientID,
 			ClientSecret: clientSecret,
-			RedirectURL:  "http://localhost:8081/callback",
+			RedirectURL:  fmt.Sprintf("http://%s:%s/callback", cfg.Host, cfg.Port),
 
 			RequestedScopes: []string{
 				"profile",
