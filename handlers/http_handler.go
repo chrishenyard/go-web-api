@@ -84,6 +84,7 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 	mux.Handle("/logout", authClient.LogoutHandler())
 	mux.Handle("/dashboard", authClient.RequireRole("user", http.HandlerFunc(handleDashboard)))
 	mux.Handle("/admin", authClient.RequireRole("admin", http.HandlerFunc(handleAdmin)))
+	mux.Handle("/", http.HandlerFunc(handleDefault))
 
 	wrappedMux := loggerMiddleware.LoggingMiddleware(logger, mux)
 
@@ -110,4 +111,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 func handleAdmin(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("Welcome to the restricted admin control panel!"))
+}
+
+func handleDefault(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, _ = w.Write([]byte("Welcome to the public area of the application!"))
 }

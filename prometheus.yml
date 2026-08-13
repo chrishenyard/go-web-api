@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'go-web-api'
+    scrape_interval: 5s
+    static_configs:
+      # 'go-app' matches the service name in docker-compose.yml
+      - targets: ['go-web-api:8081'] 

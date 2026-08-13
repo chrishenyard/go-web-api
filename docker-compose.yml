@@ -1,0 +1,68 @@
+version: '3.8'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  # Your Go Web Application
+  # Ensure your Go app serves Prometheus metrics on port 8081 at /metrics
+  go-web-api:
+    image: go-web-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-web-api
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=${PORT:-8081}
+      - VAULT_ADDR=${VAULT_ADDR}
+      - VAULT_AUTH_METHOD=${VAULT_AUTH_METHOD}
+      - VAULT_KUBERNETES_JWT_PATH=${VAULT_KUBERNETES_JWT_PATH}
+      - VAULT_MOUNT_POINT=${VAULT_MOUNT_POINT}
+      - VAULT_ROLE_ID=${VAULT_ROLE_ID}
+      - VAULT_ROLE_NAME=${VAULT_ROLE_NAME}
+      - VAULT_SECRET_ID=${VAULT_SECRET_ID}
+      - VAULT_SECRET_PATH=${VAULT_SECRET_PATH}
+      - VAULT_ALLOW_INVALID_SERVER_CERTIFICATE=${VAULT_ALLOW_INVALID_SERVER_CERTIFICATE}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_ISSUER_URL=${DOCKER_OIDC_ISSUER_URL}
+      - OIDC_REALM=${OIDC_REALM}
+      - HOST=${DOCKER_API_HOST}
+      - LOG_LEVEL=${LOG_LEVEL}
+    extra_hosts:
+      - "vault.localhost:host-gateway"
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Prometheus TSDB (Metrics Scraper & Storage)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Grafana (Visualization Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -18,25 +18,6 @@ docker build -t go-web-api:latest .
 
 # 4. Run the Docker container using the loaded variables
 echo "Starting container on port $PORT..."
-docker run -d \
-  -p $PORT:$PORT \
-  -e VAULT_ADDR="$VAULT_ADDR" \
-  -e VAULT_AUTH_METHOD="$VAULT_AUTH_METHOD" \
-  -e VAULT_KUBERNETES_JWT_PATH="$VAULT_KUBERNETES_JWT_PATH" \
-  -e VAULT_MOUNT_POINT="$VAULT_MOUNT_POINT" \
-  -e VAULT_ROLE_ID="$VAULT_ROLE_ID" \
-  -e VAULT_ROLE_NAME="$VAULT_ROLE_NAME" \
-  -e VAULT_SECRET_ID="$VAULT_SECRET_ID" \
-  -e VAULT_SECRET_PATH="$VAULT_SECRET_PATH" \
-  -e VAULT_ALLOW_INVALID_SERVER_CERTIFICATE="$VAULT_ALLOW_INVALID_SERVER_CERTIFICATE" \
-  -e OIDC_CLIENT_ID="$OIDC_CLIENT_ID" \
-  -e OIDC_ISSUER_URL="$DOCKER_OIDC_ISSUER_URL" \
-  -e OIDC_REALM="$OIDC_REALM" \
-  -e PORT="$PORT" \
-  -e HOST="$HOST" \
-  -e LOG_LEVEL="$LOG_LEVEL" \
-  --add-host=vault.localhost:host-gateway \
-  --name go-web-api \
-  go-web-api:latest
+docker compose up -d
 
 echo "Deployment successful!"
