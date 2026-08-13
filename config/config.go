@@ -15,20 +15,22 @@ type Config struct {
 	Realm        string `env:"OIDC_REALM" envDefault:""`
 
 	// Web server configuration
-	Port string `env:"PORT" envDefault:"8081"`
-	Host string `env:"HOST" envDefault:"localhost"`
+	Port         string `env:"PORT" envDefault:"8081"`
+	Host         string `env:"HOST" envDefault:"localhost"`
+	RedirectHost string `env:"REDIRECT_HOST" envDefault:"localhost"`
 	// Logging configuration
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
 }
 
 func NewConfig() (*Config, error) {
 	cfg := &Config{
-		ClientID:  os.Getenv("OIDC_CLIENT_ID"),
-		IssuerURL: os.Getenv("OIDC_ISSUER_URL"),
-		Realm:     os.Getenv("OIDC_REALM"),
-		Port:      os.Getenv("PORT"),
-		Host:      os.Getenv("HOST"),
-		LogLevel:  os.Getenv("LOG_LEVEL"),
+		ClientID:     os.Getenv("OIDC_CLIENT_ID"),
+		IssuerURL:    os.Getenv("OIDC_ISSUER_URL"),
+		Realm:        os.Getenv("OIDC_REALM"),
+		Port:         os.Getenv("PORT"),
+		Host:         os.Getenv("HOST"),
+		RedirectHost: os.Getenv("REDIRECT_HOST"),
+		LogLevel:     os.Getenv("LOG_LEVEL"),
 	}
 
 	err := setSecretsFromVault(cfg)
