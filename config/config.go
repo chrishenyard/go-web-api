@@ -33,11 +33,12 @@ func NewConfig() (*Config, error) {
 		LogLevel:     os.Getenv("LOG_LEVEL"),
 	}
 
-	err := setSecretsFromVault(cfg)
+	secrets, err := GetVaultSecrets([]string{"OIDC_CLIENT_SECRET"})
 	if err != nil {
 		fmt.Printf("Error retrieving secrets from Vault: %v\n", err)
 		return nil, err
 	}
+	cfg.ClientSecret = secrets["OIDC_CLIENT_SECRET"]
 
 	return cfg, nil
 }
@@ -58,16 +59,22 @@ func getOptions() (options *gohashicorpvault.Options) {
 	return options
 }
 
-func setSecretsFromVault(cfg *Config) error {
+func GetVaultSecrets(keys []string) (map[string]string, error) {
 	options := getOptions()
 	resp, err := gohashicorpvault.GetSecrets(options)
 	if err != nil {
-		return fmt.Errorf("failed to get secrets from vault: %v", err)
+		return nil, fmt.Errorf("failed to get secrets from vault: %v", err)
 	}
 
-	if cfg.ClientSecret = resp.Data.Data["OIDC_CLIENT_SECRET"].(string); cfg.ClientSecret == "" {
-		return fmt.Errorf("OIDC_CLIENT_SECRET is required but not found in Vault")
+	secrets := make(map[string]string)
+
+	for _, key := range keys {
+		if value, ok := resp.Data.Data[key].(string); ok && value != "" {
+			secrets[key] = value
+		} else {
+			return nil, fmt.Errorf("%s is required but not found in Vault", key)
+		}
 	}
 
-	return nil
+	return secrets, nil
 }
