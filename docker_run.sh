@@ -18,6 +18,6 @@ docker build -t go-web-api:latest .
 
 # 4. Run the Docker container using the loaded variables
 echo "Starting container on port $PORT..."
-docker compose up -d
+docker compose up --force-recreate --remove-orphans -d
 
 echo "Deployment successful!"
