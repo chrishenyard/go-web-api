@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 
 	gohashicorpvault "github.com/chrishenyard/go-hashicorp-vault"
 )
@@ -18,6 +20,9 @@ type Config struct {
 	Port         string `env:"PORT" envDefault:"8081"`
 	Host         string `env:"HOST" envDefault:"localhost"`
 	RedirectHost string `env:"REDIRECT_HOST" envDefault:"localhost"`
+	ServiceName  string `env:"SERVICE_NAME" envDefault:"go-web-api"`
+	CertFilePath string `env:"CERT_FILE_PATH" envDefault:"$HOME/source/repos/go-web-api/certs/localhost.crt"`
+	KeyFilePath  string `env:"KEY_FILE_PATH" envDefault:"$HOME/source/repos/go-web-api/certs/localhost.key"`
 	// Logging configuration
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
 }
@@ -30,6 +35,9 @@ func NewConfig() (*Config, error) {
 		Port:         os.Getenv("PORT"),
 		Host:         os.Getenv("HOST"),
 		RedirectHost: os.Getenv("REDIRECT_HOST"),
+		ServiceName:  os.Getenv("SERVICE_NAME"),
+		CertFilePath: os.Getenv("CERT_FILE_PATH"),
+		KeyFilePath:  os.Getenv("KEY_FILE_PATH"),
 		LogLevel:     os.Getenv("LOG_LEVEL"),
 	}
 
@@ -77,4 +85,17 @@ func GetVaultSecrets(keys []string) (map[string]string, error) {
 	}
 
 	return secrets, nil
+}
+
+func ParseLogLevel(levelStr string) slog.Level {
+	switch strings.ToUpper(levelStr) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo // Safe fallback
+	}
 }

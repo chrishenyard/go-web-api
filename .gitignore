@@ -8,6 +8,7 @@
 go-web-api
 main
 __debug_bin*
+certs/
 
 # Test binary, built with `go test -c`
 *.test

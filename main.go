@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/chrishenyard/go-web-api/config"
 	httpHandler "github.com/chrishenyard/go-web-api/handlers"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -32,14 +34,38 @@ func run(cfg *config.Config) error {
 	startupCtx, cancel := context.WithTimeout(sigCtx, 10*time.Second)
 	defer cancel()
 
+	shutdown, err := initTelemetry(startupCtx, cfg)
+	if err != nil {
+		log.Fatalf("Failed to init telemetry: %v", err)
+		os.Exit(1)
+	}
+	defer func() {
+		shutdown(startupCtx)
+	}()
+
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Failed to get executable path: %v", err)
+	}
+
+	cwd := filepath.Dir(exePath)
+	if err != nil {
+		log.Fatalf("Failed to get current working directory: %v", err)
+	}
+
+	certFilePath := filepath.Join(cwd, cfg.CertFilePath)
+	keyFilePath := filepath.Join(cwd, cfg.KeyFilePath)
+
 	handler, err := httpHandler.NewHttpHandler(startupCtx, cfg)
 	if err != nil {
 		return fmt.Errorf("initialize HTTP handler: %w", err)
 	}
 
+	otelHandler := otelhttp.NewHandler(handler, cfg.ServiceName)
+
 	server := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-		Handler:           handler,
+		Handler:           otelHandler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -49,7 +75,7 @@ func run(cfg *config.Config) error {
 	srvErr := make(chan error, 1)
 	go func() {
 		log.Println("Running HTTP server...")
-		srvErr <- server.ListenAndServe()
+		srvErr <- server.ListenAndServeTLS(certFilePath, keyFilePath)
 	}()
 
 	select {
