@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"time"
 
 	"github.com/chrishenyard/go-web-api/config"
@@ -43,19 +42,6 @@ func run(cfg *config.Config) error {
 		shutdown(startupCtx)
 	}()
 
-	exePath, err := os.Executable()
-	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
-	}
-
-	cwd := filepath.Dir(exePath)
-	if err != nil {
-		log.Fatalf("Failed to get current working directory: %v", err)
-	}
-
-	certFilePath := filepath.Join(cwd, cfg.CertFilePath)
-	keyFilePath := filepath.Join(cwd, cfg.KeyFilePath)
-
 	handler, err := httpHandler.NewHttpHandler(startupCtx, cfg)
 	if err != nil {
 		return fmt.Errorf("initialize HTTP handler: %w", err)
@@ -75,7 +61,7 @@ func run(cfg *config.Config) error {
 	srvErr := make(chan error, 1)
 	go func() {
 		log.Println("Running HTTP server...")
-		srvErr <- server.ListenAndServeTLS(certFilePath, keyFilePath)
+		srvErr <- server.ListenAndServeTLS(cfg.CertFilePath, cfg.KeyFilePath)
 	}()
 
 	select {

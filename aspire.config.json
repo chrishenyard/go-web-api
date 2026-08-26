@@ -1,0 +1,18 @@
+{
+  "appHost": {
+    "path": "apphost.go",
+    "language": "go"
+  },
+  "sdk": {
+    "version": "13.5.2"
+  },
+  "profiles": {
+    "https": {
+      "applicationUrl": "https://localhost:44120",
+      "environmentVariables": {
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:61049",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:51069"
+      }
+    }
+  }
+}
