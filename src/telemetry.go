@@ -2,44 +2,41 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log/slog"
 
 	"github.com/chrishenyard/go-web-api/config"
-	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/log/global"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
-type levelFilterHandler struct {
-	slog.Handler
-	level slog.Level
-}
-
-func (h *levelFilterHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.level
-}
-
-func initTelemetry(ctx context.Context, cfg *config.Config) (func(context.Context), error) {
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(cfg.ServiceName),
-		),
-	)
+func initTelemetry(ctx context.Context, cfg *config.Config) (*sdklog.LoggerProvider, *sdktrace.TracerProvider, error) {
+	// Shared resource configuration
+	res, err := resource.New(ctx, resource.WithAttributes(
+		semconv.ServiceNameKey.String(cfg.ServiceName),
+	))
 	if err != nil {
-		return nil, fmt.Errorf("creating OTLP resource: %w", err)
+		return nil, nil, err
 	}
 
+	logExporter, err := otlploggrpc.New(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	lp := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
+		sdklog.WithResource(res),
+	)
+	global.SetLoggerProvider(lp)
+
+	// 2. Setup Trace Exporter & Provider
 	traceExporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("creating OTLP trace exporter: %w", err)
+		return nil, nil, err
 	}
 	tp := sdktrace.NewTracerProvider(
 		// sdktrace.WithBatcher(traceExporter),
@@ -48,33 +45,5 @@ func initTelemetry(ctx context.Context, cfg *config.Config) (func(context.Contex
 	)
 	otel.SetTracerProvider(tp)
 
-	logExporter, err := otlploggrpc.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"creating OTLP log exporter: %w", err)
-	}
-
-	lp := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
-		sdklog.WithResource(res),
-	)
-
-	baseHandler := otelslog.NewHandler(
-		cfg.ServiceName,
-		otelslog.WithLoggerProvider(lp),
-	)
-
-	level := config.ParseLogLevel(cfg.LogLevel)
-	otelHandler := &levelFilterHandler{
-		Handler: baseHandler,
-		level:   level,
-	}
-	slog.SetDefault(slog.New(otelHandler))
-
-	shutdown := func(shutCtx context.Context) {
-		_ = tp.Shutdown(shutCtx)
-		_ = lp.Shutdown(shutCtx)
-	}
-
-	return shutdown, nil
+	return lp, tp, nil
 }

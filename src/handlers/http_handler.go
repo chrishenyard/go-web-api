@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	auth "github.com/chrishenyard/go-oidc"
 	"github.com/chrishenyard/go-web-api/config"
-	loggerMiddleware "github.com/chrishenyard/go-web-api/middleware"
 )
 
 const (
@@ -20,13 +18,6 @@ const (
 
 func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handler, error) {
 	store := auth.NewMemoryStore()
-	level := loggerMiddleware.ParseLogLevel(cfg.LogLevel)
-	opts := &slog.HandlerOptions{
-		Level: level,
-	}
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
-	slog.SetDefault(logger)
 
 	authConfig := auth.Config{
 		IssuerURL: cfg.IssuerURL,
@@ -67,7 +58,7 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 
 		LoginSuccessURL: "/dashboard",
 
-		LoggerFromContext: loggerMiddleware.LoggerFromContext,
+		Logger: slog.Default(),
 	}
 
 	authClient, err := auth.New(
@@ -86,9 +77,7 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 	mux.Handle("/admin", authClient.RequireRole("admin", http.HandlerFunc(handleAdmin)))
 	mux.Handle("/", http.HandlerFunc(handleDefault))
 
-	wrappedMux := loggerMiddleware.LoggingMiddleware(logger, mux)
-
-	return wrappedMux, nil
+	return mux, nil
 }
 
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +95,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = fmt.Fprintf(w, "Welcome to the user dashboard, %s!", displayName)
+
+	ctx := r.Context()
+	slog.InfoContext(ctx, "User accessed dashboard", "email", claims.Email, "roles", claims.Roles)
 }
 
 func handleAdmin(w http.ResponseWriter, _ *http.Request) {
