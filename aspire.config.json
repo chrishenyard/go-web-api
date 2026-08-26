@@ -7,11 +7,11 @@
     "version": "13.5.3"
   },
   "profiles": {
-    "https": {
-      "applicationUrl": "https://localhost:44120",
+    "http": {
+      "applicationUrl": "https://localhost:12209",
       "environmentVariables": {
-        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:61049",
-        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:51069"
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:49881",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:43062"
       }
     }
   }

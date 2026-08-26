@@ -36,3 +36,4 @@ go.work.sum
 # Http Rest Client
 *.http
 
+node_modules/
