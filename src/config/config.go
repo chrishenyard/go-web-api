@@ -25,6 +25,7 @@ type Config struct {
 	KeyFilePath  string `env:"KEY_FILE_PATH" envDefault:"$HOME/source/repos/go-web-api/certs/localhost.key"`
 	// Logging configuration
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
+	Env      string `env:"ENV" envDefault:"development"`
 }
 
 func NewConfig() (*Config, error) {
@@ -49,6 +50,10 @@ func NewConfig() (*Config, error) {
 	cfg.ClientSecret = secrets["OIDC_CLIENT_SECRET"]
 
 	return cfg, nil
+}
+
+func (cfg *Config) IsDevelopment() bool {
+	return strings.ToLower(cfg.Env) == "development"
 }
 
 func getOptions() (options *gohashicorpvault.Options) {
@@ -87,8 +92,8 @@ func GetVaultSecrets(keys []string) (map[string]string, error) {
 	return secrets, nil
 }
 
-func ParseLogLevel(levelStr string) slog.Level {
-	switch strings.ToUpper(levelStr) {
+func (cfg *Config) GetLogLevel() slog.Level {
+	switch strings.ToUpper(cfg.LogLevel) {
 	case "DEBUG":
 		return slog.LevelDebug
 	case "WARN", "WARNING":

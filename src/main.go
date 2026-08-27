@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,42 +13,41 @@ import (
 
 	"github.com/chrishenyard/go-web-api/config"
 	httpHandler "github.com/chrishenyard/go-web-api/handlers"
-	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+var cfg *config.Config
+
 func main() {
-	cfg, err := config.NewConfig()
+	var err error
+	cfg, err = config.NewConfig()
 	if err != nil {
 		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
 
-	if err := run(cfg); err != nil {
+	flag.StringVar(&cfg.Env, "env", "development", "Deployment environment")
+	flag.Parse()
+
+	if err := run(); err != nil {
 		slog.Error("Failed to run application", "error", err)
 		os.Exit(1)
 	}
 }
 
-func run(cfg *config.Config) error {
+func run() error {
 	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	ctx, cancel := context.WithTimeout(sigCtx, 180*time.Second)
 	defer cancel()
 
-	lp, tp, err := initTelemetry(ctx, cfg)
+	shutdown, err := initTelemetry(ctx)
 	if err != nil {
 		slog.Error("Failed to init telemetry", "error", err)
 		os.Exit(1)
 	}
-	defer func() {
-		_ = lp.Shutdown(ctx)
-		_ = tp.Shutdown(ctx)
-	}()
-
-	logger := slog.New(otelslog.NewHandler(cfg.ServiceName, otelslog.WithLoggerProvider(lp)))
-	slog.SetDefault(logger)
+	defer shutdown(ctx)
 
 	handler, err := httpHandler.NewHttpHandler(ctx, cfg)
 	if err != nil {

@@ -21,11 +21,9 @@ func main() {
 	}
 
 	protocol := aspire.OtlpProtocolGrpc
-	webApp := builder.AddExecutable("go-web-api", "go", "/home/chenyard/source/repos/go-web-api/src", []string{"run", "."}).
-		// webApp := builder.AddExecutable("go-web-api", "dlv", "/home/chenyard/source/repos/go-web-api/src", []string{
-		// 	"dap",
-		// 	"--listen=0.0.0.0:4000",
-		// }).
+	params := []string{"run", ".", "--env", "development"}
+
+	webApp := builder.AddExecutable("go-web-api", "go", "/home/chenyard/source/repos/go-web-api/src", params).
 		WithHttpsEndpoint(&aspire.WithHttpsEndpointOptions{TargetPort: &targetPort}).
 		WithHttpsDeveloperCertificate().
 		WithExternalHttpEndpoints().
