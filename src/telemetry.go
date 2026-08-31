@@ -60,7 +60,7 @@ func initTelemetry(ctx context.Context) (func(context.Context), error) {
 
 	var tp *sdktrace.TracerProvider
 	if cfg.IsDevelopment() {
-		slog.InfoContext(ctx, "Running in development mode, using synchronous trace exporter for debugging")
+		slog.Info("Running in development mode, using synchronous trace exporter")
 		tp = sdktrace.NewTracerProvider(
 			sdktrace.WithSyncer(traceExporter), // Synchronous exporting is useful while debugging.
 			sdktrace.WithResource(res),

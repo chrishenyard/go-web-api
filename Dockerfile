@@ -1,11 +1,12 @@
 FROM golang:1.26.5-alpine AS builder
 WORKDIR /app
-COPY go.mod go.sum ./
+COPY src/go.mod src/go.sum ./
+COPY src/certs ./certs
 RUN go mod download
 
-COPY . .
+COPY src .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -env development -o main ./main.go
 
 FROM alpine:latest  
 RUN apk --no-cache add ca-certificates
