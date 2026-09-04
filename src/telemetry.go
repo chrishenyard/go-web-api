@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
@@ -24,59 +28,86 @@ func (h *levelFilterHandler) Enabled(ctx context.Context, level slog.Level) bool
 }
 
 func initTelemetry(ctx context.Context) (func(context.Context), error) {
-	res, err := resource.New(ctx, resource.WithAttributes(
-		semconv.ServiceNameKey.String(cfg.ServiceName),
-	))
+	res, err := resource.New(
+		ctx,
+		resource.WithAttributes(semconv.ServiceNameKey.String(cfg.ServiceName)),
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create OpenTelemetry resource: %w", err)
 	}
 
+	// The OTLP gRPC exporters read the standard OTEL_EXPORTER_OTLP_* environment
+	// variables. docker-compose.yml supplies the CA, client certificate, and
+	// client private key required for mTLS.
 	logExporter, err := otlploggrpc.New(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create OTLP log exporter: %w", err)
 	}
 
-	lp := sdklog.NewLoggerProvider(
+	loggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
 		sdklog.WithResource(res),
 	)
 
 	baseHandler := otelslog.NewHandler(
 		cfg.ServiceName,
-		otelslog.WithLoggerProvider(lp),
+		otelslog.WithLoggerProvider(loggerProvider),
 	)
 
-	otelHandler := &levelFilterHandler{
+	slog.SetDefault(slog.New(&levelFilterHandler{
 		Handler: baseHandler,
 		level:   cfg.GetLogLevel(),
-	}
-
-	slog.SetDefault(slog.New(otelHandler))
+	}))
 
 	traceExporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
-		return nil, err
+		_ = loggerProvider.Shutdown(ctx)
+		return nil, fmt.Errorf("create OTLP trace exporter: %w", err)
 	}
 
-	var tp *sdktrace.TracerProvider
+	var tracerProvider *sdktrace.TracerProvider
 	if cfg.IsDevelopment() {
 		slog.Info("Running in development mode, using synchronous trace exporter")
-		tp = sdktrace.NewTracerProvider(
-			sdktrace.WithSyncer(traceExporter), // Synchronous exporting is useful while debugging.
+		tracerProvider = sdktrace.NewTracerProvider(
+			sdktrace.WithSyncer(traceExporter),
 			sdktrace.WithResource(res),
 		)
 	} else {
-		tp = sdktrace.NewTracerProvider(
+		tracerProvider = sdktrace.NewTracerProvider(
 			sdktrace.WithBatcher(traceExporter),
 			sdktrace.WithResource(res),
 		)
 	}
+	otel.SetTracerProvider(tracerProvider)
 
-	otel.SetTracerProvider(tp)
-
-	shutdown := func(shutCtx context.Context) {
-		_ = tp.Shutdown(shutCtx)
-		_ = lp.Shutdown(shutCtx)
+	metricExporter, err := otlpmetricgrpc.New(ctx)
+	if err != nil {
+		_ = tracerProvider.Shutdown(ctx)
+		_ = loggerProvider.Shutdown(ctx)
+		return nil, fmt.Errorf("create OTLP metric exporter: %w", err)
 	}
+
+	metricReader := sdkmetric.NewPeriodicReader(
+		metricExporter,
+		sdkmetric.WithInterval(5*time.Second),
+	)
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(metricReader),
+		sdkmetric.WithResource(res),
+	)
+	otel.SetMeterProvider(meterProvider)
+
+	shutdown := func(shutdownCtx context.Context) {
+		if err := meterProvider.Shutdown(shutdownCtx); err != nil {
+			slog.Error("Failed to shut down meter provider", "error", err)
+		}
+		if err := tracerProvider.Shutdown(shutdownCtx); err != nil {
+			slog.Error("Failed to shut down tracer provider", "error", err)
+		}
+		if err := loggerProvider.Shutdown(shutdownCtx); err != nil {
+			slog.Error("Failed to shut down logger provider", "error", err)
+		}
+	}
+
 	return shutdown, nil
 }

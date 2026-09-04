@@ -1,0 +1,41 @@
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+
+extensions:
+  jaeger_query:
+    storage:
+      traces: memory_store
+
+  jaeger_storage:
+    backends:
+      memory_store:
+        memory:
+          max_traces: 100000
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        tls:
+          cert_file: /etc/jaeger/certs/jaeger.crt
+          key_file: /etc/jaeger/certs/jaeger.key
+          client_ca_file: /etc/jaeger/certs/localhost-ca.crt
+      http:
+        endpoint: 0.0.0.0:4318
+        tls:
+          cert_file: /etc/jaeger/certs/jaeger.crt
+          key_file: /etc/jaeger/certs/jaeger.key
+          client_ca_file: /etc/jaeger/certs/localhost-ca.crt
+
+processors:
+  batch:
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: memory_store

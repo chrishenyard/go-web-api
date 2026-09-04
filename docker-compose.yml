@@ -1,9 +1,3 @@
-version: '3.8'
-
-networks:
-  monitoring:
-    driver: bridge
-
 services:
   # Your Go Web Application
   # Ensure your Go app serves Prometheus metrics on port 8081 at /metrics
@@ -36,14 +30,21 @@ services:
       - REDIRECT_HOST=${REDIRECT_HOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - SERVICE_NAME=${SERVICE_NAME}
+      # HTTPS certificate used by the application's browser-facing web server.
       - CERT_FILE_PATH=./certs/localhost.crt
       - KEY_FILE_PATH=./certs/localhost.key
-      - OTEL_EXPORTER_OTLP_CERTIFICATE=./certs
-      - OTEL_EXPORTER_OTLP_ENDPOINT=0.0.0.0:4317
+      # OTLP gRPC mTLS. The CA verifies the Collector and the client certificate
+      # identifies this Go service to the Collector.      
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-      - ASPIRE_ALLOW_UNSECURED_TRANSPORT=false
       - OTEL_EXPORTER_OTLP_INSECURE=false
-      - SSL_CERT_DIR=./certs
+      - OTEL_EXPORTER_OTLP_CERTIFICATE=/app/certs/localhost-ca.crt
+      - OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE=/app/certs/localhost.crt
+      - OTEL_EXPORTER_OTLP_CLIENT_KEY=/app/certs/localhost.key
+      # Keep the private CA available to other TLS clients used by the app.
+      - SSL_CERT_DIR=/app/certs
+    volumes:
+      - ./certs:/app/certs:ro
     extra_hosts:
       - "vault.localhost:host-gateway"
       - "keycloak.localhost:host-gateway"
@@ -51,28 +52,72 @@ services:
       - monitoring
     restart: unless-stopped
 
-  # Prometheus TSDB (Metrics Scraper & Storage)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yml:ro
+      - ./certs:/etc/otelcol-contrib/certs:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus metrics
+      - "13133:13133" # Health check
+    networks:
+      - monitoring
+    restart: unless-stopped  
+    depends_on:
+      - jaeger
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    ports:
-      - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-web.yml:/etc/prometheus/web.yml:ro
+      - ./certs:/etc/prometheus/certs:ro
       - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"  
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web.yml'
+      - '--storage.tsdb.path=/prometheus'      
     networks:
       - monitoring
     restart: unless-stopped
+    depends_on:
+      - otel-collector
 
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    container_name: jaeger
+    command: ["--config=/etc/jaeger/config.yml"]
+    volumes:
+      - ./jaeger-config.yml:/etc/jaeger/config.yml:ro
+      - ./certs:/etc/jaeger/certs:ro
+    ports:
+      - "16686:16686" # Jaeger Web UI
+    networks:
+      - monitoring
+    restart: unless-stopped
+    
   # Grafana (Visualization Dashboard)
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    ports:
-      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - jaeger
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"  
     networks:
       - monitoring
     restart: unless-stopped
@@ -80,3 +125,7 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
+
+networks:
+  monitoring:
+    driver: bridge

@@ -9,6 +9,7 @@ go-web-api
 main
 __debug_bin*
 src/certs/
+certs/
 .aspire/
 apphost
 
