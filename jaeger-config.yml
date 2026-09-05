@@ -10,7 +10,12 @@ extensions:
   jaeger_query:
     storage:
       traces: memory_store
-
+    http:
+      endpoint: 0.0.0.0:16686
+      tls:
+        cert_file: /etc/jaeger/certs/jaeger.crt
+        key_file: /etc/jaeger/certs/jaeger.key
+        
   jaeger_storage:
     backends:
       memory_store:

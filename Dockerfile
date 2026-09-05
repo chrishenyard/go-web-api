@@ -1,7 +1,7 @@
 ARG ENV=development
 
 FROM golang:1.26.5-alpine AS builder
-WORKDIR /src
+WORKDIR /src    
 COPY src/go.mod src/go.sum ./
 COPY ./certs ./certs
 RUN go mod download

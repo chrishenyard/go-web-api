@@ -10,8 +10,9 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - prometheus
-      - grafana  
+      # - prometheus
+      # - grafana  
+      - otel-collector
     environment:
       - PORT=${PORT:-8081}
       - VAULT_ADDR=${VAULT_ADDR}
@@ -31,10 +32,12 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - SERVICE_NAME=${SERVICE_NAME}
       # HTTPS certificate used by the application's browser-facing web server.
-      - CERT_FILE_PATH=./certs/localhost.crt
-      - KEY_FILE_PATH=./certs/localhost.key
+      - CERT_FILE_PATH=/app/certs/localhost.crt
+      - KEY_FILE_PATH=/app/certs/localhost.key
       # OTLP gRPC mTLS. The CA verifies the Collector and the client certificate
       # identifies this Go service to the Collector.      
+      # Jaeger requires the environment variable OTEL_ENABLED to be set to true for the OpenTelemetry SDK to send traces to the Collector.
+      - OTEL_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - OTEL_EXPORTER_OTLP_INSECURE=false
@@ -70,30 +73,34 @@ services:
     depends_on:
       - jaeger
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus-web.yml:/etc/prometheus/web.yml:ro
-      - ./certs:/etc/prometheus/certs:ro
-      - prometheus-data:/prometheus
-    ports:
-      - "9090:9090"  
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.config.file=/etc/prometheus/web.yml'
-      - '--storage.tsdb.path=/prometheus'      
-    networks:
-      - monitoring
-    restart: unless-stopped
-    depends_on:
-      - otel-collector
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - ./prometheus-web.yml:/etc/prometheus/web.yml:ro
+  #     - ./certs:/etc/prometheus/certs:ro
+  #     - prometheus-data:/prometheus
+  #   ports:
+  #     - "9090:9090"  
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--web.config.file=/etc/prometheus/web.yml'
+  #     - '--storage.tsdb.path=/prometheus'      
+  #   networks:
+  #     - monitoring
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - otel-collector
 
   jaeger:
     image: jaegertracing/jaeger:latest
     container_name: jaeger
-    command: ["--config=/etc/jaeger/config.yml"]
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    command: 
+      - "--config=/etc/jaeger/config.yml"
     volumes:
       - ./jaeger-config.yml:/etc/jaeger/config.yml:ro
       - ./certs:/etc/jaeger/certs:ro
@@ -102,29 +109,29 @@ services:
     networks:
       - monitoring
     restart: unless-stopped
-    
+
   # Grafana (Visualization Dashboard)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - prometheus
-      - jaeger
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - grafana-data:/var/lib/grafana
-    ports:
-      - "3000:3000"  
-    networks:
-      - monitoring
-    restart: unless-stopped
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   depends_on:
+  #     - prometheus
+  #     - jaeger
+  #   volumes:
+  #     - ./grafana/provisioning:/etc/grafana/provisioning
+  #     - grafana-data:/var/lib/grafana
+  #   ports:
+  #     - "3000:3000"  
+  #   networks:
+  #     - monitoring
+  #   restart: unless-stopped
 
 volumes:
   prometheus-data:
-  grafana-data:
+  # grafana-data:
 
 networks:
   monitoring:
