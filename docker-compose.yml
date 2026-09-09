@@ -37,6 +37,7 @@ services:
       # OTLP gRPC mTLS. The CA verifies the Collector and the client certificate
       # identifies this Go service to the Collector.      
       # Jaeger requires the environment variable OTEL_ENABLED to be set to true for the OpenTelemetry SDK to send traces to the Collector.
+      - OTEL_EXPORTER_OTLP_TIMEOUT=2000
       - OTEL_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc

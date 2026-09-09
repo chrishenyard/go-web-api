@@ -39,7 +39,7 @@ func run() error {
 	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	ctx, cancel := context.WithTimeout(sigCtx, 180*time.Second)
+	ctx, cancel := context.WithTimeout(sigCtx, 5*time.Second)
 	defer cancel()
 
 	shutdown, err := initTelemetry(ctx)
@@ -59,10 +59,10 @@ func run() error {
 	server := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Handler:           otelHandler,
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 3 * time.Second,
+		ReadTimeout:       3 * time.Second,
+		WriteTimeout:      3 * time.Second,
+		IdleTimeout:       3 * time.Second,
 	}
 
 	srvErr := make(chan error, 1)
