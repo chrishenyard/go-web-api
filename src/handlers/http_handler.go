@@ -24,7 +24,7 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  fmt.Sprintf("http://%s:%s/callback", cfg.RedirectHost, cfg.Port),
+		RedirectURL:  fmt.Sprintf("https://%s:%s/callback", cfg.RedirectHost, cfg.Port),
 
 		RequestedScopes: []string{
 			"profile",
