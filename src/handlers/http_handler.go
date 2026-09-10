@@ -56,7 +56,8 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 		CookieSecure:   false,
 		CookieSameSite: http.SameSiteLaxMode,
 
-		LoginSuccessURL: "/dashboard",
+		LoginSuccessURL:       cfg.LoginSuccessURL,
+		PostLogoutRedirectURL: cfg.PostLogoutRedirectURL,
 
 		Logger: slog.Default(),
 	}

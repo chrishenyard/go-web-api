@@ -31,6 +31,8 @@ services:
       - REDIRECT_HOST=${REDIRECT_HOST}
       - LOG_LEVEL=${LOG_LEVEL}
       - SERVICE_NAME=${SERVICE_NAME}
+      - LOGIN_SUCCESS_URL=${LOGIN_SUCCESS_URL}
+      - POST_LOGOUT_REDIRECT_URL=${POST_LOGOUT_REDIRECT_URL}
       # HTTPS certificate used by the application's browser-facing web server.
       - CERT_FILE_PATH=/app/certs/localhost.crt
       - KEY_FILE_PATH=/app/certs/localhost.key

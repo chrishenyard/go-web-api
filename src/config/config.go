@@ -11,10 +11,12 @@ import (
 
 type Config struct {
 	// OIDC configuration
-	ClientID     string `env:"OIDC_CLIENT_ID" envDefault:""`
-	ClientSecret string `env:"OIDC_CLIENT_SECRET" envDefault:""`
-	IssuerURL    string `env:"OIDC_ISSUER_URL" envDefault:""`
-	Realm        string `env:"OIDC_REALM" envDefault:""`
+	ClientID              string `env:"OIDC_CLIENT_ID" envDefault:""`
+	ClientSecret          string `env:"OIDC_CLIENT_SECRET" envDefault:""`
+	IssuerURL             string `env:"OIDC_ISSUER_URL" envDefault:""`
+	Realm                 string `env:"OIDC_REALM" envDefault:""`
+	LoginSuccessURL       string `env:"LOGIN_SUCCESS_URL" envDefault:"/dashboard"`
+	PostLogoutRedirectURL string `env:"POST_LOGOUT_REDIRECT_URL" envDefault:"https://localhost:8081/"`
 
 	// Web server configuration
 	Port         string `env:"PORT" envDefault:"8081"`
@@ -30,16 +32,18 @@ type Config struct {
 
 func NewConfig() (*Config, error) {
 	cfg := &Config{
-		ClientID:     os.Getenv("OIDC_CLIENT_ID"),
-		IssuerURL:    os.Getenv("OIDC_ISSUER_URL"),
-		Realm:        os.Getenv("OIDC_REALM"),
-		Port:         os.Getenv("PORT"),
-		Host:         os.Getenv("HOST"),
-		RedirectHost: os.Getenv("REDIRECT_HOST"),
-		ServiceName:  os.Getenv("SERVICE_NAME"),
-		CertFilePath: os.Getenv("CERT_FILE_PATH"),
-		KeyFilePath:  os.Getenv("KEY_FILE_PATH"),
-		LogLevel:     os.Getenv("LOG_LEVEL"),
+		ClientID:              os.Getenv("OIDC_CLIENT_ID"),
+		IssuerURL:             os.Getenv("OIDC_ISSUER_URL"),
+		Realm:                 os.Getenv("OIDC_REALM"),
+		Port:                  os.Getenv("PORT"),
+		Host:                  os.Getenv("HOST"),
+		RedirectHost:          os.Getenv("REDIRECT_HOST"),
+		ServiceName:           os.Getenv("SERVICE_NAME"),
+		CertFilePath:          os.Getenv("CERT_FILE_PATH"),
+		KeyFilePath:           os.Getenv("KEY_FILE_PATH"),
+		LogLevel:              os.Getenv("LOG_LEVEL"),
+		LoginSuccessURL:       os.Getenv("LOGIN_SUCCESS_URL"),
+		PostLogoutRedirectURL: os.Getenv("POST_LOGOUT_REDIRECT_URL"),
 	}
 
 	secrets, err := GetVaultSecrets([]string{"OIDC_CLIENT_SECRET"})
