@@ -11,8 +11,10 @@ services:
       - "8081:8081"
     depends_on:
       # - prometheus
-      # - grafana  
+      - grafana  
       - otel-collector
+    secrets:
+      - env_file
     environment:
       - PORT=${PORT:-8081}
       - VAULT_ADDR=${VAULT_ADDR}
@@ -21,7 +23,7 @@ services:
       - VAULT_MOUNT_POINT=${VAULT_MOUNT_POINT}
       - VAULT_ROLE_ID=${VAULT_ROLE_ID}
       - VAULT_ROLE_NAME=${VAULT_ROLE_NAME}
-      - VAULT_SECRET_ID=${VAULT_SECRET_ID}
+      - VAULT_SECRET_ID=
       - VAULT_SECRET_PATH=${VAULT_SECRET_PATH}
       - VAULT_ALLOW_INVALID_SERVER_CERTIFICATE=${VAULT_ALLOW_INVALID_SERVER_CERTIFICATE}
       - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
@@ -36,6 +38,7 @@ services:
       # HTTPS certificate used by the application's browser-facing web server.
       - CERT_FILE_PATH=/app/certs/localhost.crt
       - KEY_FILE_PATH=/app/certs/localhost.key
+      - ENV_FILE_PATH=/run/secrets/env_file
       # OTLP gRPC mTLS. The CA verifies the Collector and the client certificate
       # identifies this Go service to the Collector.      
       # Jaeger requires the environment variable OTEL_ENABLED to be set to true for the OpenTelemetry SDK to send traces to the Collector.
@@ -114,27 +117,37 @@ services:
     restart: unless-stopped
 
   # Grafana (Visualization Dashboard)
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=admin
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   depends_on:
-  #     - prometheus
-  #     - jaeger
-  #   volumes:
-  #     - ./grafana/provisioning:/etc/grafana/provisioning
-  #     - grafana-data:/var/lib/grafana
-  #   ports:
-  #     - "3000:3000"  
-  #   networks:
-  #     - monitoring
-  #   restart: unless-stopped
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
+      - GF_SERVER_CERT_KEY=/etc/grafana/certs/grafana.key
+      - GF_SERVER_PROTOCOL=https
+      - GF_LOG_LEVEL=debug
+    depends_on:
+      # - prometheus
+      - jaeger
+    volumes:
+      - ./provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+      - ./certs:/etc/grafana/certs:ro
+    ports:
+      - "3000:3000"  
+    networks:
+      - monitoring
+    restart: unless-stopped
 
+secrets:
+  env_file:
+    file: ./.env
+    
 volumes:
   prometheus-data:
-  # grafana-data:
+  grafana-data:
 
 networks:
   monitoring:

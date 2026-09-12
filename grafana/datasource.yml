@@ -1,0 +1,7 @@
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # Uses the Prometheus container name and internal port
+    url: http://prometheus:9090
+    isDefault: true

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	gohashicorpvault "github.com/chrishenyard/go-hashicorp-vault"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -60,24 +61,35 @@ func (cfg *Config) IsDevelopment() bool {
 	return strings.ToLower(cfg.Env) == "development"
 }
 
-func getOptions() (options *gohashicorpvault.Options) {
+func getOptions() (options *gohashicorpvault.Options, err error) {
+	envs, err := getEnv([]string{
+		"VAULT_SECRET_ID",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error reading .env file: %v", err)
+	}
+
 	options = &gohashicorpvault.Options{
 		Address:                       os.Getenv("VAULT_ADDR"),
 		AuthMethod:                    os.Getenv("VAULT_AUTH_METHOD"),
 		KubernetesJwtPath:             os.Getenv("VAULT_KUBERNETES_JWT_PATH"),
 		RoleId:                        os.Getenv("VAULT_ROLE_ID"),
 		RoleName:                      os.Getenv("VAULT_ROLE_NAME"),
-		SecretId:                      os.Getenv("VAULT_SECRET_ID"),
+		SecretId:                      envs["VAULT_SECRET_ID"],
 		MountPoint:                    os.Getenv("VAULT_MOUNT_POINT"),
 		SecretPath:                    os.Getenv("VAULT_SECRET_PATH"),
 		AllowInvalidServerCertificate: os.Getenv("VAULT_ALLOW_INVALID_SERVER_CERTIFICATE") == "true",
 	}
 
-	return options
+	return options, nil
 }
 
 func GetVaultSecrets(keys []string) (map[string]string, error) {
-	options := getOptions()
+	options, err := getOptions()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Vault options: %v", err)
+	}
+
 	resp, err := gohashicorpvault.GetSecrets(options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secrets from vault: %v", err)
@@ -94,6 +106,25 @@ func GetVaultSecrets(keys []string) (map[string]string, error) {
 	}
 
 	return secrets, nil
+}
+
+func getEnv(keys []string) (map[string]string, error) {
+	var envFilePath = os.Getenv("ENV_FILE_PATH")
+	var envs map[string]string
+	envs, err := godotenv.Read(envFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading .env file: %v", err)
+	}
+
+	result := make(map[string]string)
+	for _, key := range keys {
+		if value, ok := envs[key]; ok {
+			result[key] = value
+		} else {
+			return nil, fmt.Errorf("%s is required but not found in .env file", key)
+		}
+	}
+	return result, nil
 }
 
 func (cfg *Config) GetLogLevel() slog.Level {
