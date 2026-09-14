@@ -12,6 +12,11 @@ else
     exit 1
 fi
 
+# Certificate contents — intentionally NOT stored in .env
+export LOCALHOST_CA_CERT="$(<./certs/localhost-ca.crt)"
+export GRAFANA_CLIENT_CERT="$(<./certs/grafana.crt)"
+export GRAFANA_CLIENT_KEY="$(<./certs/grafana.key)"
+
 # 3. Build the Docker image
 echo "Building Docker image..."
 docker build -t go-web-api:latest .
@@ -19,5 +24,4 @@ docker build -t go-web-api:latest .
 # 4. Run the Docker container using the loaded variables
 echo "Starting container on port $PORT..."
 docker compose up --force-recreate --remove-orphans -d
-
 echo "Deployment successful!"

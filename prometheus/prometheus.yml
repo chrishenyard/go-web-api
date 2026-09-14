@@ -11,8 +11,8 @@ scrape_configs:
       ca_file: /etc/prometheus/certs/localhost-ca.crt
 
       # Present Prometheus' client identity to the Collector.
-      cert_file: /etc/prometheus/certs/prometheus.crt
-      key_file: /etc/prometheus/certs/prometheus.key
+      cert_file: /etc/prometheus/certs/prometheus-client.crt
+      key_file: /etc/prometheus/certs/prometheus-client.key
 
       insecure_skip_verify: false
 

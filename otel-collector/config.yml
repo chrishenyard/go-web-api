@@ -7,6 +7,7 @@ receivers:
           cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
           key_file: /etc/otelcol-contrib/certs/otel-collector.key
           client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
+
       http:
         endpoint: 0.0.0.0:4318
         tls:
@@ -21,8 +22,7 @@ exporters:
   debug:
     verbosity: detailed
 
-  # Prometheus scrapes this endpoint. The Collector is the TLS server here,
-  # so client_ca_file makes Prometheus client-certificate authentication mandatory.
+  # Exposes Collector metrics for Prometheus.
   prometheus:
     endpoint: 0.0.0.0:8889
     tls:
@@ -30,8 +30,8 @@ exporters:
       key_file: /etc/otelcol-contrib/certs/otel-collector.key
       client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
 
-  # The Collector is the TLS client when exporting traces to Jaeger.
-  # ca_file verifies Jaeger; cert_file/key_file identify the Collector to Jaeger.
+  # Export traces to Jaeger over OTLP/gRPC using mTLS.
+  # This assumes Jaeger's OTLP receiver on :4317 is configured for TLS/mTLS.
   otlp/jaeger:
     endpoint: jaeger:4317
     tls:
@@ -40,8 +40,6 @@ exporters:
       key_file: /etc/otelcol-contrib/certs/otel-collector.key
 
 extensions:
-  # Keep the health endpoint as ordinary TLS. Requiring a client certificate here
-  # would make Docker/Kubernetes health probes unnecessarily difficult.
   health_check:
     endpoint: 0.0.0.0:13133
     tls:
@@ -50,6 +48,7 @@ extensions:
 
 service:
   extensions: [health_check]
+
   pipelines:
     traces:
       receivers: [otlp]
@@ -61,8 +60,8 @@ service:
       processors: [batch]
       exporters: [debug, prometheus]
 
-    # Jaeger stores traces, not logs. Keep logs visible in the Collector debug
-    # exporter until a log backend (for example Loki) is added.
+    # Jaeger stores traces, not logs. Keep logs in the debug exporter until
+    # a log backend such as Loki is added.
     logs:
       receivers: [otlp]
       processors: [batch]

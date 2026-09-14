@@ -9,10 +9,6 @@ services:
     container_name: go-web-api
     ports:
       - "8081:8081"
-    depends_on:
-      # - prometheus
-      - grafana  
-      - otel-collector
     secrets:
       - env_file
     environment:
@@ -60,86 +56,118 @@ services:
     networks:
       - monitoring
     restart: unless-stopped
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  network-tools:
+    image: nicolaka/netshoot
+    command: sleep infinity
+    volumes:
+      - ./certs:/app/certs:ro
+    network_mode: "service:go-web-api"  # Shares the exact network namespace of go-web-api
+    depends_on:
+      - go-web-api
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: ${COLLECTOR_CONTRIB_IMAGE}
     container_name: otel-collector
     command: ["--config=/etc/otelcol-contrib/config.yml"]
     volumes:
-      - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yml:ro
+      - ./otel-collector/config.yml:/etc/otelcol-contrib/config.yml:ro
       - ./certs:/etc/otelcol-contrib/certs:ro
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
       - "8889:8889"   # Prometheus metrics
       - "13133:13133" # Health check
+    restart: unless-stopped  
     networks:
       - monitoring
-    restart: unless-stopped  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
     depends_on:
-      - jaeger
+      jaeger:
+        condition: service_started
 
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: prometheus
-  #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  #     - ./prometheus-web.yml:/etc/prometheus/web.yml:ro
-  #     - ./certs:/etc/prometheus/certs:ro
-  #     - prometheus-data:/prometheus
-  #   ports:
-  #     - "9090:9090"  
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--web.config.file=/etc/prometheus/web.yml'
-  #     - '--storage.tsdb.path=/prometheus'      
-  #   networks:
-  #     - monitoring
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - otel-collector
+  prometheus:
+    image: ${PROMETHEUS_IMAGE}
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus-web.yml:/etc/prometheus/web.yml:ro
+      - ./certs:/etc/prometheus/certs:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"  
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web.yml'
+      - '--storage.tsdb.path=/prometheus'      
+    networks:
+      - monitoring
+    restart: unless-stopped
 
   jaeger:
-    image: jaegertracing/jaeger:latest
+    image: ${JAEGERTRACING_IMAGE}
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
       - LOG_LEVEL=debug
     command: 
       - "--config=/etc/jaeger/config.yml"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
     volumes:
-      - ./jaeger-config.yml:/etc/jaeger/config.yml:ro
+      - ./jaeger/config.yml:/etc/jaeger/config.yml:ro
       - ./certs:/etc/jaeger/certs:ro
     ports:
-      - "16686:16686" # Jaeger Web UI
+      - "16686:16686" # UI
     networks:
       - monitoring
-    restart: unless-stopped
 
   # Grafana (Visualization Dashboard)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
-      - GF_SERVER_CERT_KEY=/etc/grafana/certs/grafana.key
-      - GF_SERVER_PROTOCOL=https
-      - GF_LOG_LEVEL=debug
-    depends_on:
-      # - prometheus
-      - jaeger
-    volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - grafana-data:/var/lib/grafana
-      - ./certs:/etc/grafana/certs:ro
-    ports:
-      - "3000:3000"  
-    networks:
-      - monitoring
-    restart: unless-stopped
+  # grafana:
+  #   image: ${GRAFANA_IMAGE}
+  #   container_name: grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
+  #     - GF_SERVER_CERT_KEY=/etc/grafana/certs/grafana.key
+  #     - GF_SERVER_PROTOCOL=https
+  #     - GF_LOG_LEVEL=info
+  #     - LOCALHOST_CA_CERT=${LOCALHOST_CA_CERT}
+  #     - GRAFANA_CLIENT_CERT=${GRAFANA_CLIENT_CERT}
+  #     - GRAFANA_CLIENT_KEY=${GRAFANA_CLIENT_KEY}
+  #   depends_on:
+  #     prometheus:
+  #       condition: service_started
+  #     jaeger:
+  #       condition: service_started
+  #   restart: unless-stopped
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "5m"
+  #       max-file: "2"
+  #   volumes:
+  #     - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+  #     - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+  #     - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+  #     - grafana-data:/var/lib/grafana
+  #     - ./certs:/etc/grafana/certs:ro
+  #   ports:
+  #     - "3000:3000"  
+  #   networks:
+  #     - monitoring
 
 secrets:
   env_file:
@@ -147,7 +175,7 @@ secrets:
     
 volumes:
   prometheus-data:
-  grafana-data:
+  # grafana-data:
 
 networks:
   monitoring:
