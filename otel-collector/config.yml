@@ -2,21 +2,21 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
+        endpoint: otel-collector:4317
         tls:
-          cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
-          key_file: /etc/otelcol-contrib/certs/otel-collector.key
-          client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
-
-      http:
-        endpoint: 0.0.0.0:4318
-        tls:
-          cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
-          key_file: /etc/otelcol-contrib/certs/otel-collector.key
+          cert_file: /etc/otelcol-contrib/certs/otel-collector-server.crt
+          key_file: /etc/otelcol-contrib/certs/otel-collector-server.key
           client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
 
 processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 15
   batch:
+    timeout: 10s
+    send_batch_size: 1
+    send_batch_max_size: 500
 
 exporters:
   debug:
@@ -24,10 +24,10 @@ exporters:
 
   # Exposes Collector metrics for Prometheus.
   prometheus:
-    endpoint: 0.0.0.0:8889
+    endpoint: otel-collector:8889
     tls:
-      cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
-      key_file: /etc/otelcol-contrib/certs/otel-collector.key
+      cert_file: /etc/otelcol-contrib/certs/otel-collector-server.crt
+      key_file: /etc/otelcol-contrib/certs/otel-collector-server.key
       client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
 
   # Export traces to Jaeger over OTLP/gRPC using mTLS.
@@ -36,15 +36,15 @@ exporters:
     endpoint: jaeger:4317
     tls:
       ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
-      cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
-      key_file: /etc/otelcol-contrib/certs/otel-collector.key
+      cert_file: /etc/otelcol-contrib/certs/otel-collector-client.crt
+      key_file: /etc/otelcol-contrib/certs/otel-collector-client.key
 
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
     tls:
-      cert_file: /etc/otelcol-contrib/certs/otel-collector.crt
-      key_file: /etc/otelcol-contrib/certs/otel-collector.key
+      cert_file: /etc/otelcol-contrib/certs/otel-collector-server.crt
+      key_file: /etc/otelcol-contrib/certs/otel-collector-server.key
 
 service:
   extensions: [health_check]
@@ -52,17 +52,17 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [debug, otlp/jaeger]
 
     metrics:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [debug, prometheus]
 
     # Jaeger stores traces, not logs. Keep logs in the debug exporter until
     # a log backend such as Loki is added.
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [debug]
