@@ -68,10 +68,10 @@ func (h *multiHandler) WithGroup(name string) slog.Handler {
 	return &multiHandler{handlers: handlers}
 }
 
-func initTelemetry(ctx context.Context) (func(context.Context), error) {
-	// Keep application diagnostics independent from OpenTelemetry. If the
-	// collector is unavailable, export errors are still visible locally and do
-	// not get sent back through the failing OTLP logging pipeline.
+// initConsoleLogger sets up local diagnostics independent from OpenTelemetry.
+// If the collector is unavailable, export errors are still visible locally and
+// do not get sent back through a failing OTLP logging pipeline.
+func initConsoleLogger() *slog.Logger {
 	consoleHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: cfg.GetLogLevel(),
 	})
@@ -85,14 +85,13 @@ func initTelemetry(ctx context.Context) (func(context.Context), error) {
 		consoleLogger.Warn("OpenTelemetry export failed", "error", err)
 	}))
 
-	res, err := resource.New(
-		ctx,
-		resource.WithAttributes(semconv.ServiceNameKey.String(cfg.ServiceName)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create OpenTelemetry resource: %w", err)
-	}
+	return consoleLogger
+}
 
+// initLogs wires up the OTLP log pipeline and installs a slog default logger
+// that fans out to both the console and OTLP. Local logging remains functional
+// when the collector is stopped or unreachable.
+func initLogs(ctx context.Context, res *resource.Resource, consoleLogger *slog.Logger) (*sdklog.LoggerProvider, error) {
 	// Exporters use short timeouts so telemetry remains a best-effort dependency.
 	// A missing collector must not interfere with serving HTTP requests.
 	logExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithTimeout(otelExportTimeout))
@@ -107,18 +106,21 @@ func initTelemetry(ctx context.Context) (func(context.Context), error) {
 
 	otelLogHandler := otelslog.NewHandler(cfg.ServiceName, otelslog.WithLoggerProvider(loggerProvider))
 
-	// Always log locally as well as to OTLP. Local logging remains functional
-	// when the collector is stopped or unreachable.
 	slog.SetDefault(slog.New(&multiHandler{
 		handlers: []slog.Handler{
-			consoleHandler,
+			consoleLogger.Handler(),
 			otelLogHandler,
 		},
 	}))
 
+	return loggerProvider, nil
+}
+
+// initTraces wires up the OTLP trace pipeline and registers it as the global
+// tracer provider.
+func initTraces(ctx context.Context, res *resource.Resource) (*sdktrace.TracerProvider, error) {
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithTimeout(otelExportTimeout))
 	if err != nil {
-		_ = loggerProvider.Shutdown(ctx)
 		return nil, fmt.Errorf("create OTLP trace exporter: %w", err)
 	}
 
@@ -134,13 +136,14 @@ func initTelemetry(ctx context.Context) (func(context.Context), error) {
 	)
 	otel.SetTracerProvider(tracerProvider)
 
-	metricExporter, err := otlpmetricgrpc.New(
-		ctx,
-		otlpmetricgrpc.WithTimeout(otelExportTimeout),
-	)
+	return tracerProvider, nil
+}
+
+// initMetrics wires up the OTLP metric pipeline and registers it as the global
+// meter provider.
+func initMetrics(ctx context.Context, res *resource.Resource) (*sdkmetric.MeterProvider, error) {
+	metricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithTimeout(otelExportTimeout))
 	if err != nil {
-		_ = tracerProvider.Shutdown(ctx)
-		_ = loggerProvider.Shutdown(ctx)
 		return nil, fmt.Errorf("create OTLP metric exporter: %w", err)
 	}
 
@@ -154,6 +157,38 @@ func initTelemetry(ctx context.Context) (func(context.Context), error) {
 		sdkmetric.WithResource(res),
 	)
 	otel.SetMeterProvider(meterProvider)
+
+	return meterProvider, nil
+}
+
+func initTelemetry(ctx context.Context) (func(context.Context), error) {
+	consoleLogger := initConsoleLogger()
+
+	res, err := resource.New(
+		ctx,
+		resource.WithAttributes(semconv.ServiceNameKey.String(cfg.ServiceName)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create OpenTelemetry resource: %w", err)
+	}
+
+	loggerProvider, err := initLogs(ctx, res, consoleLogger)
+	if err != nil {
+		return nil, err
+	}
+
+	tracerProvider, err := initTraces(ctx, res)
+	if err != nil {
+		_ = loggerProvider.Shutdown(ctx)
+		return nil, err
+	}
+
+	meterProvider, err := initMetrics(ctx, res)
+	if err != nil {
+		_ = tracerProvider.Shutdown(ctx)
+		_ = loggerProvider.Shutdown(ctx)
+		return nil, err
+	}
 
 	shutdown := func(shutdownCtx context.Context) {
 		// Shutdown in reverse dependency order. Failures are logged locally and do

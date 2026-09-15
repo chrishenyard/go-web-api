@@ -1,13 +1,14 @@
 module github.com/chrishenyard/go-web-api
 
-go 1.26.6
+go 1.27.1
 
 require (
 	github.com/chrishenyard/go-hashicorp-vault v1.0.2
 	github.com/chrishenyard/go-oidc v1.0.6
 	github.com/chromedp/chromedp v0.16.0
+	github.com/joho/godotenv v1.5.1
 	github.com/stillya/testcontainers-keycloak v0.3.8
-	github.com/testcontainers/testcontainers-go v0.43.0
+	github.com/testcontainers/testcontainers-go v0.44.0
 	go.opentelemetry.io/contrib/bridges/otelslog v0.20.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
 	go.opentelemetry.io/otel v1.46.0
@@ -22,26 +23,26 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20260914234754-15785f84ba1c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/chromedp/cdproto v0.0.0-20260714215040-dc233986426f // indirect
+	github.com/chromedp/cdproto v0.0.0-20260912003405-686a5c723acc // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/containerd/log v0.1.0 // indirect
+	github.com/containerd/log v0.2.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/coreos/go-oidc/v3 v3.21.0 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/go-connections v0.7.0 // indirect
+	github.com/docker/go-connections v0.8.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/ebitengine/purego v0.10.1 // indirect
+	github.com/ebitengine/purego v0.11.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.5 // indirect
-	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -55,26 +56,25 @@ require (
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/vault-client-go v0.4.3 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/klauspost/compress v1.19.0 // indirect
-	github.com/lufia/plan9stats v0.0.0-20260627054121-477a66015f15 // indirect
-	github.com/magiconair/properties v1.8.10 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
+	github.com/lufia/plan9stats v0.0.0-20260802145828-341c2f0c90b5 // indirect
+	github.com/magiconair/properties v1.18.11 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/go-archive v0.2.0 // indirect
-	github.com/moby/moby/api v1.54.2 // indirect
-	github.com/moby/moby/client v0.4.0 // indirect
+	github.com/moby/go-archive v0.3.3 // indirect
+	github.com/moby/moby/api v1.56.0 // indirect
+	github.com/moby/moby/client v0.6.0 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/sys/sequential v0.7.0 // indirect
 	github.com/moby/sys/user v0.4.1 // indirect
-	github.com/moby/sys/userns v0.1.0 // indirect
+	github.com/moby/sys/userns v0.2.1 // indirect
 	github.com/moby/term v0.5.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
+	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/shirou/gopsutil/v4 v4.26.5 // indirect
-	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/shirou/gopsutil/v4 v4.26.8 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
@@ -92,7 +92,7 @@ require (
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260908043556-f8649ddbbfe6 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260908043556-f8649ddbbfe6 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260911204522-f61a6ca850bd // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260911204522-f61a6ca850bd // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
