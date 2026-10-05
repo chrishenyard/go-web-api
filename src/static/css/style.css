@@ -1,0 +1,552 @@
+:root {
+    font-family: Inter, Segoe UI, Arial, sans-serif;
+    color: #172c34;
+    background: #f4f6f7;
+    font-size: 16px
+}
+
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0
+}
+
+button,
+select,
+input {
+    font: inherit
+}
+
+button {
+    cursor: pointer
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 3px solid #0b947e;
+    outline-offset: 3px
+}
+
+header {
+    height: 76px;
+    border-bottom: 1px solid #dce2e5;
+    background: white;
+    padding: 0 4%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.brand {
+    font-weight: 800;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 14px
+}
+
+.mark {
+    color: #098b76;
+    font-size: 34px
+}
+
+.slash {
+    color: #c6d1d5;
+    font-weight: 400
+}
+
+.subbrand {
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #61727b;
+    font-size: 14px
+}
+
+.version {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #73848d
+}
+
+main {
+    max-width: 1480px;
+    padding: 34px 4% 24px;
+    margin: auto
+}
+
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px
+}
+
+.eyebrow {
+    font-size: 12px;
+    letter-spacing: 1.8px;
+    font-weight: 700;
+    color: #768d97;
+    margin: 0 0 12px
+}
+
+h1 {
+    font-size: 36px;
+    letter-spacing: -1.3px;
+    margin: 0 0 10px;
+    font-weight: 650
+}
+
+h1 span {
+    color: #079c83
+}
+
+.intro {
+    color: #647680;
+    margin: 0;
+    font-size: 16px
+}
+
+.secondary {
+    border: 1px solid #cad5da;
+    border-radius: 6px;
+    background: white;
+    padding: 11px 17px;
+    color: #334b56;
+    font-size: 14px
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 22px
+}
+
+.visual {
+    border-radius: 12px;
+    background: #11242c;
+    color: white;
+    overflow: hidden;
+    align-self: start;
+    border: 1px solid #1a3540
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 17px 22px;
+    border-bottom: 1px solid #29404a;
+    align-items: center
+}
+
+.tabs {
+    display: flex;
+    gap: 5px;
+    background: #0a1b22;
+    padding: 4px;
+    border-radius: 6px
+}
+
+.tabs button {
+    border: 0;
+    background: transparent;
+    color: #97abb3;
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 4px
+}
+
+.tabs button[aria-pressed=true] {
+    background: #29444d;
+    color: #fff
+}
+
+.graphmeta {
+    font-size: 12px;
+    color: #95aab3
+}
+
+.canvas {
+    background-image: radial-gradient(#35505b 1px, transparent 1px);
+    background-size: 22px 22px
+}
+
+svg {
+    width: 100%;
+    display: block;
+    min-height: 340px;
+    max-height: 560px
+}
+
+.legend {
+    padding: 13px 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 12px;
+    color: #aec1c9
+}
+
+.legend span {
+    display: flex;
+    align-items: center;
+    gap: 7px
+}
+
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ffbb67
+}
+
+.line {
+    height: 3px;
+    width: 18px
+}
+
+.route {
+    background: #ffbb67
+}
+
+.branch {
+    background: #5ce5cb
+}
+
+.other {
+    background: #506974
+}
+
+.routecard {
+    background: #192f38;
+    padding: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #2d454f
+}
+
+.routecard .eyebrow {
+    font-size: 11px;
+    color: #a0b4bd
+}
+
+#route {
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #ffca87
+}
+
+.total {
+    text-align: right
+}
+
+.total>span {
+    font-size: 32px;
+    font-weight: 600;
+    color: #ffca87
+}
+
+.total small {
+    display: block;
+    font-size: 12px;
+    color: #a0b4bd;
+    margin-top: 4px
+}
+
+aside {
+    background: white;
+    border: 1px solid #dae2e6;
+    border-radius: 12px;
+    overflow: hidden
+}
+
+.control {
+    padding: 22px
+}
+
+.control+.control {
+    border-top: 1px solid #e4eaed
+}
+
+.sectiontitle {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 19px
+}
+
+.number {
+    font-size: 12px;
+    color: #088a74;
+    background: #e7f5f0;
+    padding: 6px;
+    border-radius: 4px
+}
+
+h2 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 650
+}
+
+.selects {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px
+}
+
+label {
+    font-size: 13px;
+    color: #687b84
+}
+
+select {
+    display: block;
+    width: 100%;
+    border: 1px solid #ced9de;
+    background: #f8fafb;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 7px;
+    color: #193843
+}
+
+.hint {
+    color: #788a93;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 0
+}
+
+.edges .hint {
+    margin-top: -9px;
+    margin-bottom: 18px
+}
+
+.edgehead {
+    display: flex;
+    justify-content: space-between;
+    color: #8a9ba3;
+    font-size: 10px;
+    letter-spacing: 1.3px;
+    margin-bottom: 8px
+}
+
+#edges {
+    max-height: 325px;
+    overflow: auto;
+    padding-right: 6px
+}
+
+.edgerow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eef2f4;
+    padding: 7px 0;
+    font-size: 14px
+}
+
+.edgerow.selected {
+    color: #a46215;
+    font-weight: 650
+}
+
+.edgerow input {
+    width: 67px;
+    padding: 6px 4px 6px 9px;
+    border: 1px solid #dae2e6;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #213e49;
+    background: #f8fafb
+}
+
+.edgerow span b {
+    color: #97a9b2;
+    margin: 0 12px;
+    font-weight: 400
+}
+
+#error {
+    font-size: 12px;
+    color: #b33d25;
+    margin: 6px 0 0
+}
+
+.results {
+    margin-top: 25px;
+    background: white;
+    border: 1px solid #dae2e6;
+    border-radius: 10px;
+    padding: 20px 22px
+}
+
+.resultshead {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 17px
+}
+
+.resultshead>span {
+    font-size: 13px;
+    color: #7f919a
+}
+
+#source {
+    color: #078e77
+}
+
+#distances {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px
+}
+
+.distance {
+    border: 1px solid #dfe6e9;
+    border-radius: 6px;
+    text-align: left;
+    background: #f8fafb;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #526c78
+}
+
+.distance strong {
+    font-size: 20px;
+    color: #203d47
+}
+
+.distance.active {
+    border-color: #d9a452;
+    background: #fff7ec
+}
+
+.distance.origin {
+    border-color: #68b7a6;
+    background: #ebf7f3
+}
+
+footer {
+    font-size: 12px;
+    color: #83949c;
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px
+}
+
+.node {
+    cursor: pointer
+}
+
+.node:focus {
+    outline: none
+}
+
+.node:focus circle {
+    stroke: white;
+    stroke-width: 4
+}
+
+.weight {
+    cursor: pointer
+}
+
+.weight:hover rect {
+    stroke: #ffbb67
+}
+
+@media(max-width:1050px) {
+    .workspace {
+        grid-template-columns: minmax(0, 1fr) 290px
+    }
+
+    .graphmeta {
+        display: none
+    }
+
+    .legend {
+        gap: 12px
+    }
+
+    #distances {
+        grid-template-columns: repeat(4, 1fr)
+    }
+}
+
+@media(max-width:760px) {
+    header {
+        padding: 0 20px;
+        height: 64px
+    }
+
+    .subbrand,
+    .version {
+        display: none
+    }
+
+    main {
+        padding: 25px 16px
+    }
+
+    h1 {
+        font-size: 28px
+    }
+
+    .heading {
+        gap: 15px
+    }
+
+    .intro {
+        font-size: 14px
+    }
+
+    .workspace {
+        grid-template-columns: 1fr
+    }
+
+    .toolbar {
+        padding: 14px
+    }
+
+    .tabs button {
+        font-size: 13px
+    }
+
+    .canvas svg {
+        min-height: 260px
+    }
+
+    .legend {
+        padding: 14px;
+        font-size: 11px
+    }
+
+    .routecard {
+        padding: 18px
+    }
+
+    .resultshead>span {
+        display: none
+    }
+
+    .distance {
+        padding: 10px
+    }
+
+    footer {
+        display: block;
+        line-height: 1.8
+    }
+
+    footer span {
+        display: block
+    }
+}

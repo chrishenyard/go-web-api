@@ -6,7 +6,7 @@ receivers:
         tls:
           cert_file: /etc/otelcol-contrib/certs/otel-collector-server.crt
           key_file: /etc/otelcol-contrib/certs/otel-collector-server.key
-          client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
+          ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
 
 processors:
   memory_limiter:
@@ -26,9 +26,9 @@ exporters:
   prometheus:
     endpoint: otel-collector:8889
     tls:
-      cert_file: /etc/otelcol-contrib/certs/otel-collector-server.crt
-      key_file: /etc/otelcol-contrib/certs/otel-collector-server.key
-      client_ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
+      cert_file: /etc/otelcol-contrib/certs/otel-collector-client.crt
+      key_file: /etc/otelcol-contrib/certs/otel-collector-client.key
+      ca_file: /etc/otelcol-contrib/certs/localhost-ca.crt
 
   # Export traces to Jaeger over OTLP/gRPC using mTLS.
   # This assumes Jaeger's OTLP receiver on :4317 is configured for TLS/mTLS.

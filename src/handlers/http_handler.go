@@ -70,7 +70,14 @@ func NewHttpHandler(startupCtx context.Context, cfg *config.Config) (http.Handle
 		return nil, fmt.Errorf("create OIDC client: %w", err)
 	}
 
+	dijkstra, err := newDijkstraHandler("templates")
+	if err != nil {
+		return nil, err
+	}
+
 	mux := http.NewServeMux()
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("/dijkstra", dijkstra)
 	mux.Handle("/login", authClient.LoginHandler())
 	mux.Handle("/callback", authClient.CallbackHandler())
 	mux.Handle("/logout", authClient.LogoutHandler())

@@ -5,6 +5,7 @@ go 1.27.1
 require (
 	github.com/chrishenyard/go-hashicorp-vault v1.0.2
 	github.com/chrishenyard/go-oidc v1.0.6
+	github.com/chrishenyard/go-standard-library v1.0.3
 	github.com/chromedp/chromedp v0.16.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stillya/testcontainers-keycloak v0.3.8

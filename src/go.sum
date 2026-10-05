@@ -16,6 +16,8 @@ github.com/chrishenyard/go-hashicorp-vault v1.0.2 h1:rP2toz1usmFlvXQYgYGcDh9DCkL
 github.com/chrishenyard/go-hashicorp-vault v1.0.2/go.mod h1:q+wWNYEdH3VT86WJDBHSplmO76wEtgrhgKLP0AhD3hw=
 github.com/chrishenyard/go-oidc v1.0.6 h1:Fw+Q8L1Q3HwGnN6HFS55fzaKjRtn25xrYE9iIDZ+mfY=
 github.com/chrishenyard/go-oidc v1.0.6/go.mod h1:gymgzXyW8868XjhMGGxiixJccwX5p/y1GX8N5/td1/s=
+github.com/chrishenyard/go-standard-library v1.0.3 h1:lS9wb8mxGTcxr3i2Fi4nLkYo0vraTQoyAlj/tn6ok9Y=
+github.com/chrishenyard/go-standard-library v1.0.3/go.mod h1:V2Nd75XvSoUFpkXFAGLTD/X4IerFFZ/Bjx1Vq/9CklU=
 github.com/chromedp/cdproto v0.0.0-20260912003405-686a5c723acc h1:DGGf6Tq9Qz1g0kbDvYCzoqRUpNRw8bicEHH+USB7ROE=
 github.com/chromedp/cdproto v0.0.0-20260912003405-686a5c723acc/go.mod h1:3v4FIp5njIUyPDvqXsxEOxnB34lijG0up98/5kM1KaE=
 github.com/chromedp/chromedp v0.16.0 h1:rOO4deOm4CbZgBCa8mD9g2rDyIoNs0BkgvNrlbp5ouk=

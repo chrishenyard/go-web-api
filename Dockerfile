@@ -1,6 +1,6 @@
 ARG ENV=development
 
-FROM golang:1.26.6-alpine AS builder
+FROM golang:1.27.1-alpine AS builder
 WORKDIR /src    
 COPY src/go.mod src/go.sum ./
 COPY ./certs ./certs
@@ -20,9 +20,8 @@ COPY --from=builder /src/certs ./certs
 COPY --from=builder /src/certs /usr/local/share/ca-certificates
 RUN update-ca-certificates
 
-# Copy static assets or HTML templates if your website uses them
-# COPY --from=builder /app/templates ./templates
-# COPY --from=builder /app/static ./static
+COPY --from=builder /src/templates ./templates
+COPY --from=builder /src/static ./static
 
 EXPOSE 8081
 
