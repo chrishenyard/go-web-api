@@ -16,92 +16,71 @@
                 class="subbrand">Algorithm explorer</span></div><span class="version">DIJKSTRA · 01</span>
     </header>
     <main>
-        <form method="get" action="/dijkstra">
-            <button type="submit" name="mode" value="{{.Mode}}" hidden>Update</button>
-            <div class="heading">
-                <div>
-                    <p class="eyebrow">DIRECTED, WEIGHTED GRAPH</p>
-                    <h1>Dijkstra explorer<span>.</span></h1>
-                    <p class="intro">Change a cost. Choose a start. See the shortest path.</p>
-                </div><button type="submit" name="reset" value="1" class="secondary">Reset graph</button>
-            </div>
-            <div class="workspace">
-                <section class="visual">
-                    <div class="toolbar">
-                        <div class="tabs">
-                            <button type="submit" name="mode" value="network" aria-pressed="{{eq .Mode "network"}}">Network</button>
-                            <button type="submit" name="mode" value="tree" aria-pressed="{{eq .Mode "tree"}}">Shortest-path tree</button>
-                        </div><span class="graphmeta">{{.NodeCount}} nodes / {{.EdgeCount}} edges</span>
-                    </div>
-                    <div class="canvas"><svg id="graph" viewBox="0 0 850 540" role="group"
-                            aria-label="Directed graph">
-                            <defs>
-                                <marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#526b77"/></marker>
-                                <marker id="tree" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#5ce5cb"/></marker>
-                                <marker id="path" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#ffbb67"/></marker>
-                            </defs>
-                            {{range .EdgeViews}}
-                            <line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}" stroke="{{.Stroke}}" stroke-width="{{.StrokeWidth}}" marker-end="{{.MarkerEnd}}"/>
-                            <g class="weight" aria-label="Cost from {{.From}} to {{.To}}, currently {{.Weight}}">
-                                <rect x="{{.MX}}" y="{{.MY}}" width="36" height="28" rx="7" fill="#172f39" stroke="{{.BoxStroke}}" transform="translate(-18 -14)"/>
-                                <text x="{{.MX}}" y="{{.MY}}" dy="5" text-anchor="middle" font-size="14" fill="{{.TextFill}}">{{.Weight}}</text>
-                            </g>
-                            {{end}}
-                            {{range .NodeViews}}
-                            <a href="{{.Href}}" class="node" aria-label="{{.Aria}}">
-                                {{if .Origin}}<circle cx="{{.X}}" cy="{{.Y}}" r="39" fill="none" stroke="#ffbb67" opacity=".25" stroke-width="5"/>{{end}}
-                                <circle cx="{{.X}}" cy="{{.Y}}" r="30" fill="{{.Fill}}" stroke="{{.Stroke}}" stroke-width="{{.StrokeWidth}}"/>
-                                <text x="{{.X}}" y="{{.Y}}" dy="7" text-anchor="middle" font-size="22" font-weight="600" fill="{{.TextFill}}">{{.ID}}</text>
-                                <text x="{{.X}}" y="{{.Y}}" dy="53" text-anchor="middle" font-size="13" fill="{{.LabelFill}}">{{.Label}}</text>
-                            </a>
-                            {{end}}
-                        </svg></div>
-                    <div class="legend"><span><i class="dot start"></i>Starting node</span><span><i
-                                class="line route"></i>Selected route</span><span><i class="line branch"></i>Shortest-path
-                            tree</span><span><i class="line other"></i>Other edge</span></div>
-                    <div class="routecard">
-                        <div>
-                            <p class="eyebrow">SELECTED SHORTEST PATH</p>
-                            <div id="route">{{.Route}}</div>
-                        </div>
-                        <div class="total"><span id="cost">{{.Cost}}</span><small>Total cost</small></div>
-                    </div>
-                </section>
-                <aside>
-                    <section class="control">
-                        <div class="sectiontitle"><span class="number">01</span>
-                            <h2>Choose your path</h2>
-                        </div>
-                        <div class="selects"><label>Starting node<select name="start">{{range $.Nodes}}<option{{if eq . $.Start}} selected{{end}}>{{.}}</option>{{end}}</select></label><label>Destination<select name="end">{{range $.Nodes}}<option{{if eq . $.End}} selected{{end}}>{{.}}</option>{{end}}</select></label></div>
-                        <p class="hint">Click a node to inspect its route. Choose a start and press Enter to apply.</p>
-                    </section>
-                    <section class="control edges">
-                        <div class="sectiontitle"><span class="number">02</span>
-                            <h2>Edit edge costs</h2>
-                        </div>
-                        <p class="hint">Edit costs and press Enter to recalculate every shortest path.</p>
-                        <div class="edgehead"><span>DIRECTED EDGE</span><span>COST</span></div>
-                        <div id="edges">
-                            {{range .AllEdges}}<label class="edgerow{{if .OnRoute}} selected{{end}}"><span>{{.From}}<b>→</b>{{.To}}</span><input name="w{{.Index}}" type="number" min="0" max="1000000" step="1" value="{{.Weight}}" aria-label="Cost from {{.From}} to {{.To}}"></label>
-                            {{end}}
-                        </div>
-                        <p id="error" role="alert">{{.Error}}</p>
-                    </section>
-                </aside>
-            </div>
-            <section class="results">
-                <div class="resultshead">
-                    <h2>Distances from <span id="source">{{.Start}}</span></h2><span>Minimum cost to every node</span>
+        <div class="heading">
+            <div>
+                <p class="eyebrow">DIRECTED, WEIGHTED GRAPH</p>
+                <h1>Dijkstra explorer<span>.</span></h1>
+                <p class="intro">Change a cost. Choose a start. See the shortest path.</p>
+            </div><button type="button" id="reset" class="secondary">Reset graph</button>
+        </div>
+        <div class="workspace">
+            <section class="visual">
+                <div class="toolbar">
+                    <div class="tabs">
+                        <button type="button" data-mode="network" aria-pressed="true">Network</button>
+                        <button type="button" data-mode="tree" aria-pressed="false">Shortest-path tree</button>
+                    </div><span class="graphmeta" id="graphmeta"></span>
                 </div>
-                <div id="distances">
-                    {{range .Distances}}<button type="submit" name="dest" value="{{.ID}}" class="distance {{.Class}}" aria-label="Inspect path to {{.ID}}"><span>{{.ID}}</span><strong>{{.Cost}}</strong></button>
-                    {{end}}
+                <div class="canvas"><svg id="graph" viewBox="0 0 850 540" role="group" aria-label="Directed graph">
+                        <defs>
+                            <marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#526b77"/></marker>
+                            <marker id="tree" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#5ce5cb"/></marker>
+                            <marker id="path" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#ffbb67"/></marker>
+                        </defs>
+                        <g id="edge-layer"></g>
+                        <g id="node-layer"></g>
+                    </svg></div>
+                <div class="legend"><span><i class="dot start"></i>Starting node</span><span><i
+                            class="line route"></i>Selected route</span><span><i class="line branch"></i>Shortest-path
+                        tree</span><span><i class="line other"></i>Other edge</span></div>
+                <div class="routecard">
+                    <div>
+                        <p class="eyebrow">SELECTED SHORTEST PATH</p>
+                        <div id="route"></div>
+                    </div>
+                    <div class="total"><span id="cost"></span><small>Total cost</small></div>
                 </div>
             </section>
-        </form>
+            <aside>
+                <section class="control">
+                    <div class="sectiontitle"><span class="number">01</span>
+                        <h2>Choose your path</h2>
+                    </div>
+                    <div class="selects"><label>Starting node<select id="start"></select></label><label>Destination<select id="end"></select></label></div>
+                    <p class="hint">Click a node to inspect its route. Changing the start recalculates on the server.</p>
+                </section>
+                <section class="control edges">
+                    <div class="sectiontitle"><span class="number">02</span>
+                        <h2>Edit edge costs</h2>
+                    </div>
+                    <p class="hint">Edit a cost to recalculate every shortest path.</p>
+                    <div class="edgehead"><span>DIRECTED EDGE</span><span>COST</span></div>
+                    <div id="edges"></div>
+                    <p id="error" role="alert"></p>
+                </section>
+            </aside>
+        </div>
+        <section class="results">
+            <div class="resultshead">
+                <h2>Distances from <span id="source"></span></h2><span>Minimum cost to every node</span>
+            </div>
+            <div id="distances"></div>
+        </section>
         <footer>Nonnegative integer weights · Arrows show travel direction <span>Based on your Graph, ShortestPaths &
                 Path design</span></footer>
     </main>
+    <script id="graph-data" type="application/json">{{.GraphJSON}}</script>
+    <script src="/static/js/dijkstra.js"></script>
 </body>
 
 </html>
